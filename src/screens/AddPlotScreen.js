@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-// 1. Import SafeAreaView ที่ถูกต้อง
 import { SafeAreaView } from 'react-native-safe-area-context';
-// 2. Import ปฏิทิน
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const AddPlotScreen = ({ navigation }) => {
@@ -13,11 +11,9 @@ const AddPlotScreen = ({ navigation }) => {
   const [plantDate, setPlantDate] = useState(new Date()); 
   const [harvestDate, setHarvestDate] = useState(null); 
 
-  // --- 1. สร้าง State ควบคุมปฏิทิน "แยกกัน" ---
   const [isPlantDatePickerVisible, setPlantDatePickerVisibility] = useState(false);
   const [isHarvestDatePickerVisible, setHarvestDatePickerVisibility] = useState(false);
 
-  // --- 2. สร้างฟังก์ชันสำหรับ "วันที่ปลูก" (Plant Date) ---
   const showPlantDatePicker = () => {
     setPlantDatePickerVisibility(true);
   };
@@ -29,7 +25,6 @@ const AddPlotScreen = ({ navigation }) => {
     hidePlantDatePicker();
   };
 
-  // --- 3. สร้างฟังก์ชันสำหรับ "วันที่เก็บเกี่ยว" (Harvest Date) ---
   const showHarvestDatePicker = () => {
     setHarvestDatePickerVisibility(true);
   };
@@ -41,7 +36,6 @@ const AddPlotScreen = ({ navigation }) => {
     hideHarvestDatePicker();
   };
 
-  // --- ฟังก์ชันแปลง Date ให้อ่านง่าย (th-TH) ---
   const formatDate = (date) => {
     if (!date) return 'เลือกวันที่ (ไม่บังคับ)';
     return date.toLocaleDateString('th-TH', {
@@ -91,23 +85,21 @@ const AddPlotScreen = ({ navigation }) => {
           />
 
           <Text style={styles.inputLabel}>วันที่ปลูก</Text>
-          {/* 4. ปุ่มแรกเรียกใช้ "Plant" Date Picker */}
           <TouchableOpacity 
             style={styles.dateInput} 
             onPress={showPlantDatePicker} 
           >
             <Text style={styles.dateText}>{formatDate(plantDate)}</Text>
-            <Text>🗓️</Text>
+            <Text></Text>
           </TouchableOpacity>
 
           <Text style={styles.inputLabel}>วันที่เก็บเกี่ยว</Text>
-          {/* 5. ปุ่มที่สองเรียกใช้ "Harvest" Date Picker */}
           <TouchableOpacity 
             style={styles.dateInput} 
-            onPress={showHarvestDatePicker} // <--- แก้ไขตรงนี้
+            onPress={showHarvestDatePicker}
           >
             <Text style={styles.dateText}>{formatDate(harvestDate)}</Text>
-            <Text>🗓️</Text>
+            <Text></Text>
           </TouchableOpacity>
         </View>
 
@@ -119,7 +111,6 @@ const AddPlotScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* 6. เพิ่ม Component ปฏิทิน 2 อัน (แยกกัน) */}
       <DateTimePickerModal
         isVisible={isPlantDatePickerVisible}
         mode="date"
@@ -159,7 +150,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#84a58b', // สีเขียว
+    color: '#84a58b', 
   },
   subtitle: {
     fontSize: 16,
@@ -200,12 +191,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#84a58b', // สีเขียว
+    backgroundColor: '#84a58b', 
     padding: 15,
     borderRadius: 12,
     width: '100%',
     alignItems: 'center',
-    marginTop: 'auto', // ดันลงล่าง
+    marginTop: 'auto',
     marginBottom: 20,
   },
   buttonText: {

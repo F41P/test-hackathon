@@ -48,6 +48,11 @@ const AppNavigator = () => {
             component={AddPlotScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name='AddTransaction'
+            component={AddTransactionScreen}
+            options={{ headerShown: false }}
+          />
         </>
       )}
     </Stack.Navigator>

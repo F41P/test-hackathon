@@ -1,11 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
 import { useNavigation } from '@react-navigation/native';
 
-/*
- * โครง Card กำไรสุทธิ
- */
 const NetProfitCard = () => {
   return (
     <View style={styles.card}>
@@ -25,43 +22,60 @@ const NetProfitCard = () => {
   );
 };
 
-/*
- * โครง Card สรุป (Chart)
- */
 const AnalyticsCard = () => {
+
+  const [activeTab, setActiveTab] = useState('expense'); 
+
   return (
     <View style={styles.card}>
       {/* Tabs */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity style={styles.tabActive}>
-          <Text style={styles.tabActiveText}>ค่าใช้จ่าย</Text>
+        <TouchableOpacity 
+          style={activeTab === 'expense' ? styles.tabActive : styles.tab} 
+          onPress={() => setActiveTab('expense')} 
+        >
+          <Text style={activeTab === 'expense' ? styles.tabActiveText : styles.tabText}>ค่าใช้จ่าย</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>รายได้</Text>
+       
+        <TouchableOpacity 
+          style={activeTab === 'income' ? styles.tabActive : styles.tab} 
+          onPress={() => setActiveTab('income')} 
+        >
+          <Text style={activeTab === 'income' ? styles.tabActiveText : styles.tabText}>รายได้</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>กำไร</Text>
+  
+        <TouchableOpacity 
+          style={activeTab === 'profit' ? styles.tabActive : styles.tab} 
+          onPress={() => setActiveTab('profit')} 
+        >
+          <Text style={activeTab === 'profit' ? styles.tabActiveText : styles.tabText}>กำไร</Text>
         </TouchableOpacity>
       </View>
-      
-      {/* Chart & Legend Placeholder */}
+
       <View style={styles.chartRow}>
-        <View style={styles.chartPlaceholder} /> 
-        <View style={styles.legendContainer}>
-          <Text>ข้าวโพด 35%</Text>
-          <Text>ขิง 25%</Text>
-          <Text>ข้าวหอมมะลิ 20%</Text>
-          <Text>พริก 15%</Text>
-          <Text>ผักบุ้ง 5%</Text>
-        </View>
+        {activeTab === 'expense' && (
+          <>
+            <View style={styles.chartPlaceholder} /> 
+            <View style={styles.legendContainer}>
+              <Text>ข้าวโพด 35%</Text>
+              <Text>ขิง 25%</Text>
+              <Text>ข้าวหอมมะลิ 20%</Text>
+              <Text>พริก 15%</Text>
+              <Text>ผักบุ้ง 5%</Text>
+            </View>
+          </>
+        )}
+        {activeTab === 'income' && (
+          <Text style={styles.placeholderText}>แสดงข้อมูล "รายได้" ที่นี่</Text>
+        )}
+        {activeTab === 'profit' && (
+          <Text style={styles.placeholderText}>แสดงข้อมูล "กำไร" ที่นี่</Text>
+        )}
       </View>
     </View>
   );
 };
 
-/*
- * โครง "แปลงของฉัน"
- */
 const MyPlotsSection = () => {
   const navigation = useNavigation();
   return (
@@ -84,10 +98,8 @@ const MyPlotsSection = () => {
   );
 };
 
-/*
- * หน้าจอหลัก (HomeScreen)
- */
 const HomeScreen = () => {
+  const navigation = useNavigation();
   return (
     <View style={styles.screenContainer}>
       <Header /> 
@@ -98,28 +110,29 @@ const HomeScreen = () => {
         <View style={{ height: 100 }} /> 
       </ScrollView>
 
-      {/* Floating Action Button (FAB) */}
-      <TouchableOpacity style={styles.fab}>
-        <Text style={styles.fabText}>+</Text>
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddTransaction')}
+      >
+        <Text style={styles.fabText}>+</Text> 
       </TouchableOpacity>
     </View>
   );
 };
 
-// Stylesheet ที่พยายามเลียนแบบในรูป
 const styles = StyleSheet.create({
   screenContainer: { 
     flex: 1, 
-    backgroundColor: '#F4F7F2' // สีพื้นหลังแอป (สีขาวนวลๆ)
+    backgroundColor: '#F4F7F2'
   },
   card: { 
     padding: 15, 
     marginHorizontal: 15, 
     marginVertical: 10, 
     backgroundColor: 'white', 
-    borderRadius: 12, // ทำให้ขอบมน
-    elevation: 2, // เงาจางๆ (Android)
-    shadowColor: '#000', // เงาจางๆ (iOS)
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -145,18 +158,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   incomeText: {
-    color: '#84a58b', // สีเขียว
+    color: '#84a58b',
     fontSize: 16,
     fontWeight: 'bold',
   },
   expenseText: { 
-    color: '#e57373', // สีแดง
+    color: '#e57373',
     fontSize: 16,
     fontWeight: 'bold',
   },
   tabContainer: { 
     flexDirection: 'row', 
-    justifyContent: 'flex-start', // ชิดซ้าย
+    justifyContent: 'flex-start',
     marginBottom: 15,
   },
   tab: { 
@@ -171,7 +184,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderBottomWidth: 2, 
-    borderBottomColor: '#84a58b', // สีเขียว
+    borderBottomColor: '#84a58b',
   },
   tabActiveText: {
     color: '#333',
@@ -181,7 +194,8 @@ const styles = StyleSheet.create({
   chartRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around', // จัดให้อยู่กลางๆ
+    justifyContent: 'space-around',
+    minHeight: 140, 
   },
   chartPlaceholder: { 
     width: 140, 
@@ -191,6 +205,12 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     justifyContent: 'center',
+  },
+  placeholderText: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    color: 'grey',
   },
   section: { 
     paddingHorizontal: 15,
@@ -202,7 +222,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   addPlotText: { 
-    color: '#84a58b', // สีเขียว
+    color: '#84a58b',
     fontWeight: 'bold',
   },
   plotGrid: { 
@@ -213,11 +233,11 @@ const styles = StyleSheet.create({
   },
   plotButton: { 
     borderWidth: 1, 
-    borderColor: '#e0e0e0', // สีเทาจางๆ
+    borderColor: '#e0e0e0',
     backgroundColor: 'white', 
     paddingVertical: 20, 
     marginVertical: 5, 
-    width: '48%', // ให้กว้างเกือบครึ่ง (มีช่องว่าง)
+    width: '48%',
     borderRadius: 8, 
     alignItems: 'center',
   },
@@ -228,15 +248,15 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#84a58b', // สีเขียว
+    backgroundColor: '#84a58b',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4, // เงา
+    elevation: 4,
   },
   fabText: { 
     fontSize: 30, 
     color: 'white',
-    lineHeight: 34 // จัด + ให้อยู่กลาง
+    lineHeight: 34
   }
 });
 

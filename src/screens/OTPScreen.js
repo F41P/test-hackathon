@@ -14,7 +14,6 @@ const OTPScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Back Button */}
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()} 
@@ -26,7 +25,6 @@ const OTPScreen = ({ navigation, route }) => {
         <Text style={styles.subtitle}>กรอกรหัส OTP 6 หลักที่ส่งไปยัง</Text>
         <Text style={styles.phoneText}>{route.params.phoneNumber}</Text>
 
-        {/* ช่องกรอก OTP */}
         <Text style={styles.inputLabel}>รหัส OTP</Text>
         <View style={styles.otpContainer}>
           {otp.map((digit, index) => (
@@ -45,7 +43,6 @@ const OTPScreen = ({ navigation, route }) => {
           ))}
         </View>
 
-        {/* ลิงก์ส่งอีกครั้ง */}
         <View style={styles.resendContainer}>
           <Text style={styles.resendText}>ไม่ได้รับรหัส? </Text>
           <TouchableOpacity>
@@ -53,7 +50,6 @@ const OTPScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        {/* ปุ่มยืนยัน */}
        <TouchableOpacity 
         style={styles.button}
         onPress={() => { 
@@ -97,7 +93,7 @@ const styles = StyleSheet.create({
   },
   phoneText: {
     fontSize: 16,
-    color: 'black', // สีเข้มกว่า
+    color: 'black', 
     textAlign: 'center',
     marginBottom: 30,
   },
@@ -115,9 +111,9 @@ const styles = StyleSheet.create({
   otpBox: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    backgroundColor: '#f5f5f5', // สีเทาอ่อน
+    backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    width: 50, // ปรับขนาด
+    width: 50, 
     height: 60,
     textAlign: 'center',
     fontSize: 22,
@@ -132,16 +128,16 @@ const styles = StyleSheet.create({
     color: 'grey',
   },
   resendLink: {
-    color: '#84a58b', // สีเขียว
+    color: '#84a58b', 
     fontWeight: 'bold',
   },
   button: {
-    backgroundColor: '#84a58b', // สีเขียวตามรูป
+    backgroundColor: '#84a58b', 
     padding: 15,
     borderRadius: 12,
     width: '100%',
     alignItems: 'center',
-    marginTop: 'auto', // ดันปุ่มลงล่างสุด
+    marginTop: 'auto',
     marginBottom: 20,
   },
   buttonText: {

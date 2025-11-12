@@ -20,12 +20,10 @@ const LoginScreen = ({ navigation }) => {
         <Text style={styles.title}>เข้าสู่ระบบ</Text>
         <Text style={styles.subtitle}>กรอกเบอร์โทรศัพท์เพื่อเข้าใช้งาน</Text>
 
-        {/* Input Form */}
         <View style={styles.form}>
           <Text style={styles.inputLabel}>เบอร์โทรศัพท์</Text>
           <View style={styles.inputContainer}>
-            {/* Placeholder for phone icon */}
-            <Text style={styles.inputIcon}>📞</Text> 
+            <Text style={styles.inputIcon}></Text> 
             <TextInput
               style={styles.input}
               placeholder="08XXXXXXXX"

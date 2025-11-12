@@ -1,30 +1,28 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-// 1. Import hook 'useAuth' เพื่อดึงเบอร์โทรมาโชว์
 import { useAuth } from '../context/AuthContext';
-// 2. Import 'SafeAreaView' ตัวที่ถูกต้อง
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const ProfileScreen = () => {
-  // 3. ดึงเบอร์โทรจาก Context
+const ProfileScreen = ({ navigation }) => {
   const { phoneNumber } = useAuth();
 
-  // 4. สร้าง State สำหรับเก็บชื่อและนามสกุลที่กรอก
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Back Button (Placeholder, navigator จะสร้างให้ถ้าเราไม่ซ่อน) */}
-        {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text>{"<"} กลับ</Text>
-        </TouchableOpacity> */}
-        
-        <Text style={styles.title}>ข้อมูลส่วนตัว</Text>
-        <Text style={styles.subtitle}>จัดการข้อมูลของคุณ</Text>
 
-        {/* Profile Picture Placeholder */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>{"<"}</Text>
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.title}>ข้อมูลส่วนตัว</Text> 
+            <Text style={styles.subtitle}>จัดการข้อมูลของคุณ</Text>
+          </View>
+        </View>
+        
         <View style={styles.avatarPlaceholder}>
           <Text>อัปโหลดรูป</Text>
         </View>
@@ -34,17 +32,16 @@ const ProfileScreen = () => {
           <Text style={styles.inputLabel}>ชื่อผู้ใช้</Text>
           <TextInput
             style={[styles.input, styles.inputDisabled]}
-            value={phoneNumber} // ดึงเบอร์จาก Context
+            value={phoneNumber} 
             editable={false}
           />
           
           <Text style={styles.inputLabel}>โทรศัพท์</Text>
           <TextInput
             style={styles.input}
-            value={phoneNumber} // ดึงเบอร์จาก Context
+            value={phoneNumber} 
             keyboardType="phone-pad"
             maxLength={10}
-            // เราอาจจะอนุญาตให้แก้ไขเบอร์ได้ในอนาคต
           />
 
           <Text style={styles.inputLabel}>ชื่อ</Text>
@@ -64,7 +61,6 @@ const ProfileScreen = () => {
           />
         </View>
 
-        {/* Save Button */}
         <TouchableOpacity 
           style={styles.button}
           onPress={() => { /* TODO: บันทึกข้อมูล (ยิง API) */ }}
@@ -85,15 +81,25 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    fontSize: 28,
+    color: '#333',
+    marginRight: 15,
+    fontWeight: 'bold',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#84a58b', 
   },
   subtitle: {
     fontSize: 16,
     color: 'grey',
-    marginBottom: 20,
   },
   avatarPlaceholder: {
     width: 120,
@@ -125,11 +131,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   inputDisabled: {
-    backgroundColor: '#e0e0e0', // สีเทาสำหรับช่องที่แก้ไขไม่ได้
+    backgroundColor: '#e0e0e0',
     color: '#555',
   },
   button: {
-    backgroundColor: '#84a58b', // สีเขียว
+    backgroundColor: '#84a58b', 
     padding: 15,
     borderRadius: 12,
     width: '100%',
