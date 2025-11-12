@@ -4,18 +4,22 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext'; 
 // 2. Import SafeAreaView ที่ถูกต้อง
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 // 3. ลบ (route) ออก
 const Header = () => {
   // 4. ดึง 'phoneNumber' มาจาก Context
   const { phoneNumber } = useAuth(); 
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={{ backgroundColor: '#84a58b' }}> 
       <View style={styles.headerContainer}>
-        <View style={styles.avatar} />
+        <TouchableOpacity 
+          style={styles.avatar}
+          onPress={() => navigation.navigate('Profile')} 
+        ></TouchableOpacity>
 
-        {/* 5. ใช้ 'phoneNumber' ที่ดึงมา */}
         <Text style={styles.greetingText}>สวัสดี, คุณ {phoneNumber}</Text>
 
         <TouchableOpacity>
