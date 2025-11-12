@@ -1,0 +1,62 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+android/
+ios/
+*.apk
+*.aab
+*.xcworkspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+logs/
+expo-error.log
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.iml
+
+# Temporary files
+.tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*.bak
+
+# Metro bundler cache
+.expo/
+.expo-shared/
+.cache/
+.bundle/
+coverage/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Optional Expo Go artifacts
+.expo-dev-cache/
+.expo-packager-cache/
