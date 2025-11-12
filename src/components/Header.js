@@ -1,13 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// 1. Import hook 'useAuth'
+import { useAuth } from '../context/AuthContext'; 
+// 2. Import SafeAreaView ที่ถูกต้อง
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+// 3. ลบ (route) ออก
 const Header = () => {
+  // 4. ดึง 'phoneNumber' มาจาก Context
+  const { phoneNumber } = useAuth(); 
+
   return (
     <SafeAreaView style={{ backgroundColor: '#84a58b' }}> 
       <View style={styles.headerContainer}>
         <View style={styles.avatar} />
 
-        <Text style={styles.greetingText}>สวัสดี, คุณ 08xxxxxxxx</Text>
+        {/* 5. ใช้ 'phoneNumber' ที่ดึงมา */}
+        <Text style={styles.greetingText}>สวัสดี, คุณ {phoneNumber}</Text>
 
         <TouchableOpacity>
           <Text style={styles.menuIcon}>☰</Text> 

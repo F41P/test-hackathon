@@ -1,9 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 
+import { useAuth } from '../context/AuthContext';
+
 const OTPScreen = ({ navigation, route }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const inputs = useRef([]); 
+
+  const { login } = useAuth();
+
+  const { phoneNumber } = route.params;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,12 +54,14 @@ const OTPScreen = ({ navigation, route }) => {
         </View>
 
         {/* ปุ่มยืนยัน */}
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => { /* TODO: ส่ง OTP ไปตรวจสอบ */ }}
-        >
-          <Text style={styles.buttonText}>ยืนยัน</Text>
-        </TouchableOpacity>
+       <TouchableOpacity 
+        style={styles.button}
+        onPress={() => { 
+          login(phoneNumber); 
+        }}
+      >
+        <Text style={styles.buttonText}>ยืนยัน</Text>
+      </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import OTPScreen from '../screens/OTPScreen';
 import HomeScreen from '../screens/HomeScreen'; 
 
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const { isLoggedIn } = useAuth();
 
   return (
 

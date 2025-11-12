@@ -63,13 +63,13 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginVertical: 40, 
-    borderRadius: 24, 
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
     width: 60,
     height: 60,
+    borderRadius: 15, 
   },
   title: {
     fontSize: 24,
