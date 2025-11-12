@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
+import { useNavigation } from '@react-navigation/native';
 
 /*
  * โครง Card กำไรสุทธิ
@@ -62,11 +63,12 @@ const AnalyticsCard = () => {
  * โครง "แปลงของฉัน"
  */
 const MyPlotsSection = () => {
+  const navigation = useNavigation();
   return (
     <View style={styles.section}>
       <View style={styles.row}>
         <Text style={styles.sectionTitle}>แปลงของฉัน</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('AddPlot')}>
           <Text style={styles.addPlotText}>+ เพิ่มแปลง</Text>
         </TouchableOpacity>
       </View>
@@ -93,7 +95,6 @@ const HomeScreen = () => {
         <NetProfitCard />
         <AnalyticsCard />
         <MyPlotsSection />
-        {/* เพิ่มพื้นที่ว่างด้านล่าง กันปุ่มบวกลอยมาทับ */}
         <View style={{ height: 100 }} /> 
       </ScrollView>
 
