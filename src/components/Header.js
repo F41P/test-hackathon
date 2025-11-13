@@ -1,14 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-// 1. Import hook 'useAuth'
 import { useAuth } from '../context/AuthContext'; 
-// 2. Import SafeAreaView ที่ถูกต้อง
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
-// 3. ลบ (route) ออก
 const Header = () => {
-  // 4. ดึง 'phoneNumber' มาจาก Context
   const { phoneNumber } = useAuth(); 
   const navigation = useNavigation();
 
@@ -22,8 +18,8 @@ const Header = () => {
 
         <Text style={styles.greetingText}>สวัสดี, คุณ {phoneNumber}</Text>
 
-        <TouchableOpacity>
-          <Text style={styles.menuIcon}>☰</Text> 
+        <TouchableOpacity onPress={() => navigation.navigate('Compare')}>
+          <Text style={styles.menuIcon}>📊</Text> 
         </TouchableOpacity>
       </View>
     </SafeAreaView>

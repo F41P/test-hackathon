@@ -9,6 +9,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AddPlotScreen from '../screens/AddPlotScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import PlotDetailScreen from '../screens/PlotDetailScreen';
+import CompareScreen from '../screens/CompareScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +59,11 @@ const AppNavigator = () => {
             name="PlotDetail" 
             component={PlotDetailScreen}
             options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="Compare" 
+            component={CompareScreen}
+            options={{ headerShown: false }}
           />
         </>
       )}

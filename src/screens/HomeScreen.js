@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
 import { useNavigation } from '@react-navigation/native';
+import { usePlots } from '../navigation/PlotContext';
 
 const NetProfitCard = () => {
   return (
@@ -78,6 +79,7 @@ const AnalyticsCard = () => {
 
 const MyPlotsSection = () => {
   const navigation = useNavigation();
+  const { plots } = usePlots();
   return (
     <View style={styles.section}>
       <View style={styles.row}>
@@ -87,32 +89,19 @@ const MyPlotsSection = () => {
         </TouchableOpacity>
       </View>
       
-      {/* Plot Buttons (Grid) */}
       <View style={styles.plotGrid}>
-        <TouchableOpacity 
-          style={styles.plotButton}
-          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ข้าวโพดหลังบ้าน' })}
-        >
-          <Text>ข้าวโพดหลังบ้าน</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.plotButton}
-          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ข้าวหอมมะลิ' })}
-        >
-          <Text>ข้าวหอมมะลิ</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.plotButton}
-          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ขิงแปลงใหญ่' })}
-        >
-          <Text>ขิงแปลงใหญ่</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.plotButton}
-          onPress={() => navigation.navigate('PlotDetail', { plotName: 'พริกข้างเทศบาล' })}
-        >
-          <Text>พริกข้างเทศบาล</Text>
-        </TouchableOpacity>
+        {plots.map((plot) => (
+          <TouchableOpacity 
+            key={plot.id}
+            style={styles.plotButton}
+            onPress={() => navigation.navigate('PlotDetail', { 
+              plotId: plot.id, // (ส่ง ID ไปแทน)
+              plotName: plot.name 
+            })}
+          >
+            <Text>{plot.name}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
