@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen'; 
 import AddPlotScreen from '../screens/AddPlotScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
+import PlotDetailScreen from '../screens/PlotDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -52,6 +53,11 @@ const AppNavigator = () => {
             name='AddTransaction'
             component={AddTransactionScreen}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="PlotDetail" 
+            component={PlotDetailScreen}
+            options={{ headerShown: false }} 
           />
         </>
       )}

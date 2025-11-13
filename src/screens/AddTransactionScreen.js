@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-
 import DropDownPicker from 'react-native-dropdown-picker';
 
 const expenseCategories = [
@@ -28,15 +27,15 @@ const AddTransactionScreen = ({ navigation }) => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date());
   const [notes, setNotes] = useState('');
-
+  
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryValue, setCategoryValue] = useState(expenseCategories[0].value);
   const [categoryItems, setCategoryItems] = useState(expenseCategories);
-
+  
   const [plotOpen, setPlotOpen] = useState(false);
   const [plotValue, setPlotValue] = useState(plotItems[0].value);
   const [plotItemsList, setPlotItemsList] = useState(plotItems);
-
+  
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   const showDatePicker = () => setDatePickerVisibility(true);
@@ -53,9 +52,23 @@ const AddTransactionScreen = ({ navigation }) => {
     });
   };
 
+  const onCategoryOpen = () => {
+    setPlotOpen(false); 
+  };
+  const onPlotOpen = () => {
+    setCategoryOpen(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.innerContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.innerContainer}
+        keyboardShouldPersistTaps="handled"
+        onScroll={() => { 
+          setCategoryOpen(false);
+          setPlotOpen(false);
+        }}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>{"<"}</Text>
@@ -89,7 +102,6 @@ const AddTransactionScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* --- Form --- */}
         <View style={styles.form}>
           <Text style={styles.inputLabel}>จำนวนเงิน (บาท)</Text>
           <TextInput
@@ -114,8 +126,10 @@ const AddTransactionScreen = ({ navigation }) => {
             setValue={setCategoryValue}
             setItems={setCategoryItems}
             style={styles.dropdown}
-            containerStyle={{ zIndex: 2000 }}
-            placeholder={activeTab === 'expense' ? 'เลือกค่าใช้จ่าย' : 'เลือกรายได้'}
+            containerStyle={styles.dropdownContainer} 
+            onOpen={onCategoryOpen} 
+            zIndex={2000} 
+            zIndexInverse={1000}
           />
 
           <Text style={styles.inputLabel}>แปลงที่เกี่ยวข้อง</Text>
@@ -127,8 +141,10 @@ const AddTransactionScreen = ({ navigation }) => {
             setValue={setPlotValue}
             setItems={setPlotItemsList}
             style={styles.dropdown}
-            containerStyle={{ zIndex: 1000 }} 
-            placeholder="ไม่ระบุ"
+            containerStyle={styles.dropdownContainer} 
+            onOpen={onPlotOpen} 
+            zIndex={1000} 
+            zIndexInverse={2000}
           />
 
           <Text style={styles.inputLabel}>หมายเหตุ (ถ้ามี)</Text>
@@ -154,7 +170,6 @@ const AddTransactionScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
@@ -185,7 +200,10 @@ const styles = StyleSheet.create({
   tabActiveIncome: { backgroundColor: '#84a58b' },
   tabActiveText: { color: 'white', fontWeight: 'bold' },
   tabText: { color: 'grey', fontWeight: 'bold' },
-  form: { width: '100%', zIndex: 1 }, 
+
+  form: { 
+    width: '100%', 
+  }, 
   inputLabel: { marginTop: 10, marginBottom: 5, color: 'grey', fontSize: 14 },
   input: {
     borderWidth: 1,
@@ -217,8 +235,9 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    width: '100%',
     height: 55,
+  },
+  dropdownContainer: {
     marginBottom: 10, 
   },
   button: {
@@ -227,7 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 30, 
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
 });

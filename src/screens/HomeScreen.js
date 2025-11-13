@@ -89,10 +89,30 @@ const MyPlotsSection = () => {
       
       {/* Plot Buttons (Grid) */}
       <View style={styles.plotGrid}>
-        <TouchableOpacity style={styles.plotButton}><Text>ข้าวโพดหลังบ้าน</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.plotButton}><Text>ข้าวหอมมะลิ</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.plotButton}><Text>ขิงแปลงใหญ่</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.plotButton}><Text>พริกข้างเทศบาล</Text></TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.plotButton}
+          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ข้าวโพดหลังบ้าน' })}
+        >
+          <Text>ข้าวโพดหลังบ้าน</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.plotButton}
+          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ข้าวหอมมะลิ' })}
+        >
+          <Text>ข้าวหอมมะลิ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.plotButton}
+          onPress={() => navigation.navigate('PlotDetail', { plotName: 'ขิงแปลงใหญ่' })}
+        >
+          <Text>ขิงแปลงใหญ่</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.plotButton}
+          onPress={() => navigation.navigate('PlotDetail', { plotName: 'พริกข้างเทศบาล' })}
+        >
+          <Text>พริกข้างเทศบาล</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
