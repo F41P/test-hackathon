@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { usePlot } from '../navigation/PlotContext';
+import { usePlots } from '../context/PlotContext';
 
 const AddPlotScreen = ({ navigation }) => {
   const [cropName, setCropName] = useState('');
@@ -37,7 +37,7 @@ const AddPlotScreen = ({ navigation }) => {
     hideHarvestDatePicker();
   };
 
-  const { addPlot } = usePlot();
+  const { addPlot } = usePlots();
 
   const formatDate = (date) => {
     if (!date) return 'เลือกวันที่ (ไม่บังคับ)';

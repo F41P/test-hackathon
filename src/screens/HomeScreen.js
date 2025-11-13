@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
 import { useNavigation } from '@react-navigation/native';
-import { usePlots } from '../navigation/PlotContext';
+import { usePlots } from '../context/PlotContext';
 
 const NetProfitCard = () => {
   return (

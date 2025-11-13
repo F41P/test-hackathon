@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import DropDownPicker from 'react-native-dropdown-picker';
+import { usePlots } from '../context/PlotContext';
 
 const expenseCategories = [
   {label: 'ค่าปุ๋ย', value: 'ค่าปุ๋ย'},
@@ -16,11 +17,6 @@ const incomeCategories = [
   {label: 'ขายแปรรูป', value: 'ขายแปรรูป'},
   {label: 'อื่นๆ', value: 'อื่นๆ'},
 ];
-const plotItems = [
-  {label: 'ไม่ระบุ', value: 'ไม่ระบุ'},
-  {label: 'ข้าวโพดหลังบ้าน', value: 'ข้าวโพดหลังบ้าน'},
-  {label: 'ขิงแปลงใหญ่', value: 'ขิงแปลงใหญ่'},
-]
 
 const AddTransactionScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('expense'); 
@@ -32,9 +28,18 @@ const AddTransactionScreen = ({ navigation }) => {
   const [categoryValue, setCategoryValue] = useState(expenseCategories[0].value);
   const [categoryItems, setCategoryItems] = useState(expenseCategories);
   
+  const { plots } = usePlots(); 
+  const plotItemsList = [
+    { label: 'ไม่ระบุ', value: 'ไม่ระบุ' },
+    ...plots.map(plot => ({
+      label: plot.name,
+      value: plot.id,
+    }))
+  ];
+
   const [plotOpen, setPlotOpen] = useState(false);
-  const [plotValue, setPlotValue] = useState(plotItems[0].value);
-  const [plotItemsList, setPlotItemsList] = useState(plotItems);
+  const [plotValue, setPlotValue] = useState('ไม่ระบุ');
+  const [plotItems, setPlotItems] = useState(plotItemsList);
   
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
@@ -115,6 +120,7 @@ const AddTransactionScreen = ({ navigation }) => {
           <Text style={styles.inputLabel}>วันที่ทำรายการ</Text>
           <TouchableOpacity style={styles.dateInput} onPress={showDatePicker}>
             <Text style={styles.dateText}>{formatDate(date)}</Text>
+            <Text>🗓️</Text>
           </TouchableOpacity>
 
           <Text style={styles.inputLabel}>หมวดหมู่</Text>
@@ -130,21 +136,23 @@ const AddTransactionScreen = ({ navigation }) => {
             onOpen={onCategoryOpen} 
             zIndex={2000} 
             zIndexInverse={1000}
+            nestedScrollEnabled={true}
           />
 
           <Text style={styles.inputLabel}>แปลงที่เกี่ยวข้อง</Text>
           <DropDownPicker
             open={plotOpen}
             value={plotValue}
-            items={plotItemsList}
+            items={plotItems}
             setOpen={setPlotOpen}
             setValue={setPlotValue}
-            setItems={setPlotItemsList}
+            setItems={setPlotItems}
             style={styles.dropdown}
             containerStyle={styles.dropdownContainer} 
             onOpen={onPlotOpen} 
             zIndex={1000} 
             zIndexInverse={2000}
+            nestedScrollEnabled={true}
           />
 
           <Text style={styles.inputLabel}>หมายเหตุ (ถ้ามี)</Text>
@@ -195,12 +203,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  tabActiveExpense: { backgroundColor: '#84a58b' },
-  tabActiveIncome: { backgroundColor: '#84a58b' },
+  tabActiveExpense: { 
+    backgroundColor: '#84a58b',
+    borderColor: '#84a58b',
+  },
+  tabActiveIncome: { 
+    backgroundColor: '#84a58b',
+    borderColor: '#84a58b',
+  },
   tabActiveText: { color: 'white', fontWeight: 'bold' },
   tabText: { color: 'grey', fontWeight: 'bold' },
-
   form: { 
     width: '100%', 
   }, 

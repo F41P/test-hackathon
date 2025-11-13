@@ -30,10 +30,13 @@ const PlotDetailScreen = ({ navigation, route }) => {
             <Text style={styles.summaryLabel}>รายได้</Text>
             <Text style={styles.summaryAmount}>32,XXX บาท</Text>
           </View>
-          <View style={[styles.summaryCard, styles.expenseCard]}>
+          <TouchableOpacity 
+            style={[styles.summaryCard, styles.expenseCard]}
+            onPress={() => navigation.navigate('ExpenseDetail', { plotName: plotName })}
+          >
             <Text style={styles.summaryLabel}>ค่าใช้จ่าย</Text>
             <Text style={styles.summaryAmount}>28,XXX บาท</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.infoSection}>
