@@ -3,8 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { usePlots } from '../context/PlotContext';
+import { useAuth } from '../context/AuthContext';
+
+
 
 const AddPlotScreen = ({ navigation }) => {
+  const { user } = useAuth();
+
   const [cropName, setCropName] = useState('');
   const [plotName, setPlotName] = useState('');
   const [areaSize, setAreaSize] = useState('');
@@ -48,17 +53,36 @@ const AddPlotScreen = ({ navigation }) => {
     });
   };
 
-  const handleSavePlot = () => {
+  // const handleSavePlot = () => {
+  //   const newPlotData = {
+  //     plotName: plotName,
+  //     cropName: cropName,
+  //     areaSize: areaSize,
+  //     plantDate: plantDate,
+  //     harvestDate: harvestDate,
+  //   };
+  //   addPlot(newPlotData);
+  //   navigation.goBack();
+  // };
+  const handleSavePlot = async () => {
+  try {
     const newPlotData = {
-      plotName: plotName,
-      cropName: cropName,
-      areaSize: areaSize,
-      plantDate: plantDate,
-      harvestDate: harvestDate,
+      user_id: user.user_id,      
+      plot_name: plotName,        
+      plant_id: 2,                
+      area_size: areaSize || 0,   
     };
-    addPlot(newPlotData);
+
+    console.log("newPlotData", newPlotData);
+
+    await addPlot(newPlotData);
     navigation.goBack();
-  };
+
+  } catch (err) {
+    console.log("Add plot error:", err);
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
