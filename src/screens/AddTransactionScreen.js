@@ -1,53 +1,28 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import DropDownPicker from 'react-native-dropdown-picker';
-
 import { usePlots } from '../context/PlotContext';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-
-const expenseCategories = [
-  { label: 'ค่าเมล็ดพันธุ์', value: 6 },
-  { label: 'ค่าปุ๋ย', value: 7 },
-  { label: 'ค่ายาฆ่าแมลง', value: 8 },
-  { label: 'ค่าเครื่องจักร', value: 9 },
-  { label: 'ค่าแรงงาน', value: 10 },
-];
-
-const incomeCategories = [
-  { label: 'ขายผลผลิต', value: 9 },
-  { label: 'ขายแปรรูป', value: 10 },
-  // { label: 'อื่นๆ', value: 3 },
-];
+import { createTransaction, getExpenseCategories, getIncomeCategories } from '../services/transaction.service';
+import { getPlotsSummary } from '../services/summary.service';
 
 const AddTransactionScreen = ({ navigation }) => {
   const { user } = useAuth();
-  const { plots } = usePlots();
 
   const [activeTab, setActiveTab] = useState('expense');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date());
 
-  // Dropdown — Category
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [categoryValue, setCategoryValue] = useState(expenseCategories[0].value);
-  const [categoryItems, setCategoryItems] = useState(expenseCategories);
-
-  // Dropdown — Plot
-  const plotItemsList = [
-    { label: 'ไม่ระบุ', value: null },
-    ...plots.map(p => ({
-      label: p.name,
-      value: p.id,
-    }))
-  ];
+  const [categoryValue, setCategoryValue] = useState(null);
+  const [categoryItems, setCategoryItems] = useState([]);
 
   const [plotOpen, setPlotOpen] = useState(false);
   const [plotValue, setPlotValue] = useState(null);
-  const [plotItems, setPlotItems] = useState(plotItemsList);
+  const [plotItems, setPlotItems] = useState([]);
 
   // Date picker
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -65,79 +40,71 @@ const AddTransactionScreen = ({ navigation }) => {
       day: 'numeric',
     });
 
-  // ปิด dropdown ซ้อนทับ
-  const onCategoryOpen = () => setPlotOpen(false);
-  const onPlotOpen = () => setCategoryOpen(false);
+  useEffect(() => {
+    loadCategories();
+    loadPlotItems();
+  }, [activeTab]);
 
-  // ---------------------------------------
-  // ⭐ SAVE TRANSACTION
-  // ---------------------------------------
+  const loadCategories = async () => {
+    try {
+      const data = activeTab === 'expense' 
+        ? await getExpenseCategories() 
+        : await getIncomeCategories();
+      
+      const items = data.data.map(cat => ({
+        label: cat.name,
+        value: cat.id
+      }));
+      
+      setCategoryItems(items);
+      if (items.length > 0) {
+        setCategoryValue(items[0].value);
+      }
+    } catch (err) {
+      console.log("Load categories error:", err);
+    }
+  };
+
+  const loadPlotItems = async () => {
+    try {
+      const data = await getPlotsSummary(user.user_id);
+      const list = [
+        { label: "ไม่ระบุ", value: null },
+        ...data.map((p) => ({
+          label: p.plot_name,
+          value: p.plot_id,
+        }))
+      ];
+      setPlotItems(list);
+    } catch (err) {
+      console.log("Load plot items error:", err);
+    }
+  };
+
   const handleSave = async () => {
-  try {
-    const numericAmount = parseFloat(amount);
-    const finalAmount =
-      activeTab === "expense"
-        ? -Math.abs(numericAmount)
-        : Math.abs(numericAmount);
+    try {
+      if (!amount || parseFloat(amount) <= 0) {
+        Alert.alert("ข้อมูลไม่ครบ", "กรุณากรอกจำนวนเงิน");
+        return;
+      }
 
-    const payload = {
-      user_id: user?.user_id,          
-      plot_id: plotValue !== "ไม่ระบุ" ? plotValue : null,
-      category_id: categoryValue,
-      amount: finalAmount,
-      note: notes,
-      date: date.toISOString().split("T")[0],
-    };
+      const payload = {
+        user_id: user?.user_id,          
+        plot_id: plotValue,
+        category_id: categoryValue,
+        amount: parseFloat(amount),
+        note: notes,
+        date: date.toISOString().split("T")[0],
+      };
 
-    console.log("POST payload:", payload);
-
-    const API_URL =
-      Platform.OS === "android"
-        ? "http://10.0.2.2:3005/api"
-        : "http://localhost:3005/api";
-
-    const res = await axios.post(`${API_URL}/transactions`, payload);
-
-    console.log("POST SUCCESS:", res.data);
-    Alert.alert("สำเร็จ", "บันทึกรายการเรียบร้อยแล้ว");
-    navigation.goBack();
-  } catch (err) {
-    console.log("Save error:", err);
-    console.log("STATUS:", err.response?.status);
-    console.log("DATA:", err.response?.data);
-
-    Alert.alert("ผิดพลาด", `บันทึกรายการไม่สำเร็จ: ${err.response?.data?.error || err.message}`);
-  }
-  // ⭐ โหลด plot real-time จาก API dashboard
-const loadPlotItems = async () => {
-  try {
-    const API_URL =
-      Platform.OS === "android"
-        ? "http://10.0.2.2:3005/api"
-        : "http://localhost:3005/api";
-
-    const res = await axios.get(`${API_URL}/dashboard/plots?user_id=${user.user_id}`);
-
-    const list = [
-      { label: "ไม่ระบุ", value: null },
-      ...res.data.map((p) => ({
-        label: p.plot_name,
-        value: p.plot_id,
-      }))
-    ];
-
-    setPlotItems(list);
-  } catch (err) {
-    console.log("Load plot items error:", err);
-  }
-};
-
-// โหลดตอนเปิดหน้า
-useEffect(() => {
-  loadPlotItems();
-}, []);
-
-};
+      await createTransaction(payload);
+      Alert.alert("สำเร็จ", "บันทึกรายการเรียบร้อยแล้ว");
+      navigation.goBack();
+    } catch (err) {
+      console.log("Save error:", err);
+      Alert.alert("ผิดพลาด", "บันทึกรายการไม่สำเร็จ");
+    }
+  };
 
 
   return (
@@ -160,11 +127,7 @@ useEffect(() => {
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'expense' && styles.tabActive]}
-            onPress={() => {
-              setActiveTab('expense');
-              setCategoryItems(expenseCategories);
-              setCategoryValue(expenseCategories[0].value);
-            }}
+            onPress={() => setActiveTab('expense')}
           >
             <Text style={activeTab === 'expense' ? styles.tabActiveText : styles.tabText}>
               ค่าใช้จ่าย
@@ -173,11 +136,7 @@ useEffect(() => {
 
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'income' && styles.tabActive]}
-            onPress={() => {
-              setActiveTab('income');
-              setCategoryItems(incomeCategories);
-              setCategoryValue(incomeCategories[0].value);
-            }}
+            onPress={() => setActiveTab('income')}
           >
             <Text style={activeTab === 'income' ? styles.tabActiveText : styles.tabText}>
               รายได้
@@ -213,27 +172,23 @@ useEffect(() => {
             setItems={setCategoryItems}
             style={styles.dropdown}
             containerStyle={styles.dropdownContainer}
-            onOpen={onCategoryOpen}
+            onOpen={() => setPlotOpen(false)}
             zIndex={3000}
           />
 
-          {/* PLOT */}
           <Text style={styles.inputLabel}>แปลงที่เกี่ยวข้อง</Text>
-<DropDownPicker
-  open={plotOpen}
-  value={plotValue}
-  items={plotItems}
-  setOpen={setPlotOpen}
-  setValue={setPlotValue}
-  setItems={setPlotItems}
-  style={styles.dropdown}
-  containerStyle={styles.dropdownContainer}
-  onOpen={() => {
-    setCategoryOpen(false);
-    loadPlotItems();   // โหลดใหม่ทุกครั้งที่เปิด dropdown
-  }}
-  zIndex={2000}
-/>
+          <DropDownPicker
+            open={plotOpen}
+            value={plotValue}
+            items={plotItems}
+            setOpen={setPlotOpen}
+            setValue={setPlotValue}
+            setItems={setPlotItems}
+            style={styles.dropdown}
+            containerStyle={styles.dropdownContainer}
+            onOpen={() => setCategoryOpen(false)}
+            zIndex={2000}
+          />
 
           {/* NOTES */}
           <Text style={styles.inputLabel}>หมายเหตุ (ถ้ามี)</Text>

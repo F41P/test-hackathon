@@ -1,18 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getUserProfile, updateUserProfile } from '../services/user.service';
 
 const ProfileScreen = ({ navigation }) => {
-  const { phoneNumber } = useAuth();
-
+  const { user, login } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const profile = await getUserProfile(user.user_id);
+      setFirstName(profile.data.firstName || '');
+      setLastName(profile.data.lastName || '');
+      setPhone(profile.data.phone || '');
+      setLoading(false);
+    } catch (err) {
+      console.log("Load profile error:", err);
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const updatedData = {
+        firstName,
+        lastName,
+        phone
+      };
+
+      const result = await updateUserProfile(user.user_id, updatedData);
+      login(result.data);
+      Alert.alert("สำเร็จ", "บันทึกข้อมูลเรียบร้อยแล้ว");
+    } catch (err) {
+      console.log("Update profile error:", err);
+      Alert.alert("ผิดพลาด", "ไม่สามารถบันทึกข้อมูลได้");
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#84a58b" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>{"<"}</Text>
@@ -27,21 +70,14 @@ const ProfileScreen = ({ navigation }) => {
           <Text>อัปโหลดรูป</Text>
         </View>
 
-        {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.inputLabel}>ชื่อผู้ใช้</Text>
-          <TextInput
-            style={[styles.input, styles.inputDisabled]}
-            value={phoneNumber} 
-            editable={false}
-          />
-          
           <Text style={styles.inputLabel}>โทรศัพท์</Text>
           <TextInput
             style={styles.input}
-            value={phoneNumber} 
+            value={phone} 
             keyboardType="phone-pad"
             maxLength={10}
+            onChangeText={setPhone}
           />
 
           <Text style={styles.inputLabel}>ชื่อ</Text>
@@ -63,7 +99,7 @@ const ProfileScreen = ({ navigation }) => {
 
         <TouchableOpacity 
           style={styles.button}
-          onPress={() => { /* TODO: บันทึกข้อมูล (ยิง API) */ }}
+          onPress={handleSave}
         >
           <Text style={styles.buttonText}>บันทึกโปรไฟล์</Text>
         </TouchableOpacity>

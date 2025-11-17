@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { usePlots } from '../context/PlotContext';
@@ -65,23 +65,27 @@ const AddPlotScreen = ({ navigation }) => {
   //   navigation.goBack();
   // };
   const handleSavePlot = async () => {
-  try {
-    const newPlotData = {
-      user_id: user.user_id,      
-      plot_name: plotName,        
-      plant_id: 2,                
-      area_size: areaSize || 0,   
-    };
+    try {
+      if (!plotName.trim()) {
+        Alert.alert("ข้อมูลไม่ครบ", "กรุณากรอกชื่อแปลง");
+        return;
+      }
 
-    console.log("newPlotData", newPlotData);
+      const newPlotData = {
+        user_id: user.user_id,      
+        plot_name: plotName,        
+        plant_id: 1,
+        area_size: parseFloat(areaSize) || 0,   
+      };
 
-    await addPlot(newPlotData);
-    navigation.goBack();
+      await addPlot(newPlotData);
+      navigation.goBack();
 
-  } catch (err) {
-    console.log("Add plot error:", err);
-  }
-};
+    } catch (err) {
+      console.log("Add plot error:", err);
+      Alert.alert("ผิดพลาด", "ไม่สามารถเพิ่มแปลงได้");
+    }
+  };
 
 
   return (

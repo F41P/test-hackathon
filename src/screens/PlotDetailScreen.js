@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-
-// ดึง service จริงของคุณ
 import { getPlotById, getRoundsByPlot } from "../services/plot.service";
 import { getTransactions } from "../services/transaction.service";
 
@@ -12,55 +10,104 @@ const PlotDetailScreen = ({ navigation, route }) => {
   const plotName = route?.params?.plotName || "ข้อมูลแปลง";
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [plot, setPlot] = useState(null);
   const [round, setRound] = useState(null);
   const [transactions, setTransactions] = useState([]);
 
   const nav = useNavigation();
 
-  // ฟังก์ชัน format วันอย่างปลอดภัย
   const safeDate = (d) => (d ? String(d).slice(0, 10) : "-");
 
   useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+    useCallback(() => {
+      let isActive = true;
 
-    const load = async () => {
-      try {
-        // 1) ดึงข้อมูลแปลง
-        const plotRes = await getPlotById(plotId);
-        if (!isActive) return;
-        setPlot(plotRes);
+      const load = async () => {
+        try {
+          setLoading(true);
+          setError(null);
 
-        // 2) ดึงรอบทั้งหมด
-        const rounds = await getRoundsByPlot(plotId);
-        if (Array.isArray(rounds) && rounds.length > 0) {
-          const latest = rounds[rounds.length - 1];
-          setRound(latest);
+          console.log("=== Loading plot detail ===");
+          console.log("Plot ID:", plotId);
 
-          // 3) ดึง transactions ของรอบล่าสุด
-          const tx = await getTransactions(latest.round_id);
-          if (isActive) setTransactions(tx);
+          // 1) ดึงข้อมูลแปลง
+          const plotRes = await getPlotById(plotId);
+          console.log("Plot data:", plotRes);
+          
+          if (!isActive) return;
+          setPlot(plotRes);
+
+          // 2) ดึงรอบทั้งหมด
+          const rounds = await getRoundsByPlot(plotId);
+          console.log("Rounds data:", rounds);
+
+          if (Array.isArray(rounds) && rounds.length > 0) {
+            const latest = rounds.at(-1);
+            setRound(latest);
+
+            // 3) ดึง transactions ของรอบล่าสุด
+            const tx = await getTransactions(latest.round_id);
+            console.log("Transactions data:", tx);
+            
+            if (isActive) setTransactions(Array.isArray(tx) ? tx : []);
+          } else {
+            console.log("No rounds found");
+            setRound(null);
+            setTransactions([]);
+          }
+
+          setLoading(false);
+        } catch (err) {
+          console.log("=== Load plot detail error ===");
+          console.log("Error:", err);
+          console.log("Error message:", err.message);
+          console.log("Error response:", err.response?.data);
+          
+          if (isActive) {
+            setError(err.message);
+            setLoading(false);
+            
+            Alert.alert(
+              "ไม่สามารถโหลดข้อมูลได้",
+              `เกิดข้อผิดพลาด: ${err.response?.data?.error || err.message}\n\nกรุณาลองใหม่อีกครั้ง`,
+              [
+                { text: "ลองใหม่", onPress: () => load() },
+                { text: "กลับ", onPress: () => navigation.goBack() }
+              ]
+            );
+          }
         }
+      };
 
-        setLoading(false);
-      } catch (err) {
-        console.log("Load plot detail error:", err);
-      }
-    };
+      load();
 
-    load();
+      return () => { isActive = false; };
+    }, [plotId])
+  );
 
-    return () => { isActive = false; };
-  }, [plotId])
-);
-
-
-  if (loading || !plot) {
+  if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
         <ActivityIndicator size="large" color="#84a58b" />
-        <Text>กำลังโหลดข้อมูล...</Text>
+        <Text style={{ marginTop: 10 }}>กำลังโหลดข้อมูล...</Text>
+      </View>
+    );
+  }
+
+  if (error || !plot) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff", padding: 20 }}>
+        <Text style={{ fontSize: 18, color: 'red', marginBottom: 20 }}>เกิดข้อผิดพลาด</Text>
+        <Text style={{ textAlign: 'center', color: 'grey', marginBottom: 20 }}>
+          {error || "ไม่พบข้อมูลแปลง"}
+        </Text>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.buttonText}>กลับ</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -97,7 +144,10 @@ const PlotDetailScreen = ({ navigation, route }) => {
 
           <TouchableOpacity
             style={[styles.summaryCard, styles.expenseCard]}
-            onPress={() => navigation.navigate("ExpenseDetail", { plotId })}
+            onPress={() => navigation.navigate("ExpenseDetail", { 
+              plotId,
+              plotName 
+            })}
           >
             <Text style={styles.summaryLabel}>ค่าใช้จ่าย</Text>
             <Text style={styles.summaryAmount}>{format(expenseTotal)} บาท</Text>
@@ -105,7 +155,7 @@ const PlotDetailScreen = ({ navigation, route }) => {
         </View>
 
         {/* Plot info */}
-        {round && (
+        {round ? (
           <View style={styles.infoSection}>
             <Text style={styles.sectionTitle}>ข้อมูลการปลูก</Text>
 
@@ -119,6 +169,13 @@ const PlotDetailScreen = ({ navigation, route }) => {
               <Text>{safeDate(round.end_date)}</Text>
             </View>
           </View>
+        ) : (
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>ข้อมูลการปลูก</Text>
+            <Text style={{ textAlign: "center", color: "grey", marginTop: 10 }}>
+              ยังไม่มีรอบการปลูก
+            </Text>
+          </View>
         )}
 
         {/* Transactions */}
@@ -126,14 +183,14 @@ const PlotDetailScreen = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>ประวัติรายการ</Text>
 
           {transactions.length === 0 ? (
-            <Text style={{ textAlign: "center", color: "grey" }}>
+            <Text style={{ textAlign: "center", color: "grey", marginTop: 10 }}>
               ยังไม่มีรายการ
             </Text>
           ) : (
             transactions.map((tx) => (
-              <View style={styles.historyItem} key={tx.transaction_id}>
+              <View style={styles.historyItem} key={tx.id || tx.transaction_id}>
                 <View>
-                  <Text style={styles.historyNote}>{tx.note}</Text>
+                  <Text style={styles.historyNote}>{tx.note || "ไม่มีหมายเหตุ"}</Text>
                   <Text style={styles.historyDate}>{safeDate(tx.date)}</Text>
                 </View>
 
@@ -161,7 +218,6 @@ const PlotDetailScreen = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7F2' },
@@ -226,7 +282,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 4,
   },
-  fabText: { fontSize: 30, color: 'white', lineHeight: 34 }
+  fabText: { fontSize: 30, color: 'white', lineHeight: 34 },
+  button: {
+    backgroundColor: '#84a58b',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    minWidth: 120,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
 });
 
 export default PlotDetailScreen;

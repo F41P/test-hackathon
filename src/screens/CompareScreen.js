@@ -1,37 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { useAuth } from '../context/AuthContext';
+import { getPlotsSummary } from '../services/summary.service';
 
-const plotItems = [
-  {label: 'ข้าวโพดหลังบ้าน', value: 'plot1'},
-  {label: 'ขิงแปลงใหญ่', value: 'plot2'},
-  {label: 'ข้าวหอมมะลิ', value: 'plot3'},
-];
+const MAX_BAR_HEIGHT = 180;
 
-const chartData = {
-  plot1: { name: 'ข้าวโพดหลังบ้าน', income: 8000, expense: 6500, profit: 1500 },
-  plot2: { name: 'ขิงแปลงใหญ่', income: 10000, expense: 6000, profit: 4000 },
-};
 
 const CompareScreen = ({ navigation }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [plotItems, setPlotItems] = useState([]);
+  const [chartData, setChartData] = useState({});
+
   const [plot1Open, setPlot1Open] = useState(false);
-  const [plot1Value, setPlot1Value] = useState(plotItems[0].value);
-  
+  const [plot1Value, setPlot1Value] = useState(null);
+
   const [plot2Open, setPlot2Open] = useState(false);
-  const [plot2Value, setPlot2Value] = useState(plotItems[1].value);
+  const [plot2Value, setPlot2Value] = useState(null);
+
+  useEffect(() => {
+    loadPlots();
+  }, []);
+
+  const loadPlots = async () => {
+    try {
+      const data = await getPlotsSummary(user.user_id);
+
+      const items = data.map(p => ({
+        label: p.plot_name,
+        value: p.plot_id
+      }));
+
+      const dataMap = {};
+      data.forEach(p => {
+        dataMap[p.plot_id] = {
+          name: p.plot_name,
+          income: parseFloat(p.income_total) || 0,
+          expense: parseFloat(p.expense_total) || 0,
+          profit: parseFloat(p.profit) || 0
+        };
+      });
+
+      setPlotItems(items);
+      setChartData(dataMap);
+
+      if (items.length > 0) setPlot1Value(items[0].value);
+      if (items.length > 1) setPlot2Value(items[1].value);
+
+      setLoading(false);
+    } catch (err) {
+      console.log("Load plots error:", err);
+      setLoading(false);
+    }
+  };
 
   const onPlot1Open = () => setPlot2Open(false);
   const onPlot2Open = () => setPlot1Open(false);
 
-  const data1 = chartData[plot1Value] || chartData.plot1;
-  const data2 = chartData[plot2Value] || chartData.plot2;
+  const data1 = chartData[plot1Value] || { name: '', income: 0, expense: 0, profit: 0 };
+  const data2 = chartData[plot2Value] || { name: '', income: 0, expense: 0, profit: 0 };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
+        <ActivityIndicator size="large" color="#84a58b" />
+        <Text>กำลังโหลดข้อมูล...</Text>
+      </View>
+    );
+  }
+  // const maxValue = Math.max(
+  //   data1.income, data1.expense, data1.profit,
+  //   data2.income, data2.expense, data2.profit
+  // );
+  // const scale = maxValue / MAX_BAR_HEIGHT;
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.innerContainer}
         keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
         onScroll={() => {
           setPlot1Open(false);
           setPlot2Open(false);
@@ -56,7 +106,7 @@ const CompareScreen = ({ navigation }) => {
             setValue={setPlot1Value}
             onOpen={onPlot1Open}
             style={styles.dropdown}
-            containerStyle={{...styles.dropdownContainer, zIndex: 2000}}
+            containerStyle={{ ...styles.dropdownContainer, zIndex: 2000 }}
           />
           <DropDownPicker
             open={plot2Open}
@@ -66,24 +116,24 @@ const CompareScreen = ({ navigation }) => {
             setValue={setPlot2Value}
             onOpen={onPlot2Open}
             style={styles.dropdown}
-            containerStyle={{...styles.dropdownContainer, zIndex: 1000}}
+            containerStyle={{ ...styles.dropdownContainer, zIndex: 1000 }}
           />
         </View>
 
         <View style={styles.chartContainer}>
           <View style={styles.barGroup}>
-            <View style={[styles.bar, styles.barIncome, {height: data1.income / 50}]} />
-            <View style={[styles.bar, styles.barExpense, {height: data1.expense / 50}]} />
-            <View style={[styles.bar, styles.barProfit, {height: data1.profit / 50}]} />
+            <View style={[styles.bar, styles.barIncome, { height: data1.income  }]} />
+            <View style={[styles.bar, styles.barExpense, { height: data1.expense  }]} />
+            <View style={[styles.bar, styles.barProfit, { height: data1.profit  }]} />
           </View>
 
           <View style={styles.barGroup}>
-            <View style={[styles.bar, styles.barIncome, {height: data2.income / 50}]} />
-            <View style={[styles.bar, styles.barExpense, {height: data2.expense / 50}]} />
-            <View style={[styles.bar, styles.barProfit, {height: data2.profit / 50}]} />
+            <View style={[styles.bar, styles.barIncome, { height: data2.income }]} />
+            <View style={[styles.bar, styles.barExpense, { height: data2.expense }]} />
+            <View style={[styles.bar, styles.barProfit, { height: data2.profit }]} />
           </View>
         </View>
-        
+
         <View style={styles.legend}>
           <View style={[styles.legendDot, styles.barIncome]} />
           <Text style={styles.legendText}>รายได้</Text>
@@ -137,19 +187,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    height: 250, 
+    height: 250,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     paddingBottom: 10,
     marginTop: 20,
+    overflow: 'hidden',
   },
-  barGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: '100%',
-    position: 'relative',
-    paddingHorizontal: 10,
-  },
+barGroup: {
+  flexDirection: 'row',
+  alignItems: 'flex-end',
+  height: MAX_BAR_HEIGHT,   // ใช้ความสูงจริง
+  paddingHorizontal: 10,
+},
+
+
   barLabel: {
     position: 'absolute',
     top: -20,
@@ -164,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   barIncome: { backgroundColor: '#64b5f6' },
-  barExpense: { backgroundColor: '#e57373' }, 
+  barExpense: { backgroundColor: '#e57373' },
   barProfit: { backgroundColor: '#81c784' },
   legend: {
     flexDirection: 'row',

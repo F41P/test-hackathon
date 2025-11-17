@@ -1,14 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
-import { useNavigation, useFocusEffect  } from '@react-navigation/native';
-
-import { usePlots } from '../context/PlotContext';   // ✔ ใช้ PlotContext
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { usePlots } from '../context/PlotContext';
 import { getPlots } from '../services/plot.service';
+import { getSummary } from '../services/summary.service';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-
-const API_URL = "http://localhost:3005/api";
 
 const NetProfitCard = ({ income, expense, profit }) => {
   return (
@@ -137,24 +134,24 @@ const HomeScreen = () => {
   const loadPlots = async () => {
     try {
       const res = await getPlots(user.user_id);
-
       const formatted = res.map((p) => ({
         id: p.plot_id,
         name: p.plot_name,
       }));
-
       setPlots(formatted);
     } catch (err) {
       console.log("Load plots error:", err);
     }
   };
 
-
   const loadSummary = async () => {
     try {
-      const res = await axios.get(`${API_URL}/dashboard/summary?user_id=${user.user_id}`);
-      console.log("SUMMARY:", res.data);
-      setSummary(res.data);
+      const data = await getSummary(user.user_id);
+      setSummary({
+        income_total: parseFloat(data.income_total) || 0,
+        expense_total: parseFloat(data.expense_total) || 0,
+        profit_total: parseFloat(data.profit_total) || 0,
+      });
     } catch (err) {
       console.log("Summary error:", err);
     }
