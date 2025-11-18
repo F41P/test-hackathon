@@ -160,7 +160,7 @@ const OTPScreen = ({ navigation, route }) => {
 
       login(user);
 
-      navigation.replace("HomeScreen");
+      // navigation.replace("HomeScreen");
 
     } catch (err) {
       console.log("OTP error:", err);

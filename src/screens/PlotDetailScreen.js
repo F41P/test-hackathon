@@ -131,20 +131,30 @@ const PlotDetailScreen = ({ navigation, route }) => {
 
         {/* Plot info */}
         {round && (
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>ข้อมูลการปลูก</Text>
+  <View style={styles.infoSection}>
+    <Text style={styles.sectionTitle}>ข้อมูลการปลูก</Text>
 
-            <View style={styles.infoRow}>
-              <Text>วันที่ปลูก</Text>
-              <Text>{safeDate(round.start_date)}</Text>
-            </View>
+    <View style={styles.infoRow}>
+      <Text>วันที่ปลูก</Text>
+      <Text>{safeDate(round.start_date)}</Text>
+    </View>
 
-            <View style={styles.infoRow}>
-              <Text>วันที่เก็บเกี่ยว</Text>
-              <Text>{safeDate(round.end_date)}</Text>
-            </View>
-          </View>
-        )}
+    <View style={styles.infoRow}>
+      <Text>วันที่เก็บเกี่ยว</Text>
+      <Text>{safeDate(round.end_date)}</Text>
+    </View>
+  </View>
+)}
+
+{/* ⭐ ปุ่มเพิ่มผลผลิตย้อนหลัง — แสดงตลอด */}
+<TouchableOpacity
+  style={styles.addYieldButton}
+  onPress={() => navigation.navigate("AddYield", { plotId })}
+>
+  <Text style={styles.addYieldText}>+ เพิ่มผลผลิตย้อนหลัง</Text>
+</TouchableOpacity>
+
+
 
         {/* Transactions */}
         <View style={styles.infoSection}>
@@ -251,6 +261,21 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabText: { fontSize: 30, color: "white", lineHeight: 34 },
+
+  addYieldButton: {
+  backgroundColor: "#84a58b",
+  padding: 14,
+  borderRadius: 10,
+  marginHorizontal: 15,
+  marginBottom: 10,
+  alignItems: "center",
+},
+addYieldText: {
+  color: "white",
+  fontSize: 16,
+  fontWeight: "bold",
+},
+
 });
 
 export default PlotDetailScreen;
