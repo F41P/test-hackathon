@@ -23,6 +23,8 @@ const API_URL =
     ? "http://10.0.2.2:3005/api"
     : "http://localhost:3005/api";
 
+
+
 const AddTransactionScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { plots } = usePlots();
@@ -113,6 +115,30 @@ const AddTransactionScreen = ({ navigation }) => {
       Alert.alert("ผิดพลาด", `บันทึกรายการไม่สำเร็จ`);
     }
   };
+  const loadPlotItems = async () => {
+      try {
+        const API_URL =
+          Platform.OS === "android"
+            ? "http://10.0.2.2:3005/api"
+            : "http://localhost:3005/api";
+
+        const res = await axios.get(
+          `${API_URL}/dashboard/plots?user_id=${user.user_id}`
+        );
+
+        const list = [
+          { label: "ไม่ระบุ", value: null },
+          ...res.data.map((p) => ({
+            label: p.plot_name,
+            value: p.plot_id,
+          })),
+        ];
+
+        setPlotItems(list);
+      } catch (err) {
+        console.log("Load plot items error:", err);
+      }
+    };
 
   useEffect(() => {
     if (user?.user_id) {
@@ -243,6 +269,8 @@ const AddTransactionScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
   innerContainer: { flexGrow: 1, padding: 20, paddingBottom: 100 },

@@ -212,10 +212,6 @@ const AnalyticsCard = ({ reloadSignal }) => {
           </>
         )}
       </View>
-
-      <Text style={{ marginTop: 10, textAlign: "center", color: "grey" }}>
-        รวมค่าใช้จ่ายทั้งหมด {total.toLocaleString()} บาท
-      </Text>
     </View>
   );
 };
