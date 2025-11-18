@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PieChart } from "react-native-chart-kit";
@@ -121,7 +122,10 @@ const ExpenseDetailScreen = ({ navigation, route }) => {
         {/* HEADER */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Image 
+              source={require('../assets/images/back_icon.png')} 
+              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            />
           </TouchableOpacity>
           <Text style={styles.title}>{plotName || "รายละเอียดค่าใช้จ่าย"}</Text>
           <View style={{ width: 40 }} />

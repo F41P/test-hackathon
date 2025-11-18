@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -156,7 +157,10 @@ const AddTransactionScreen = ({ navigation }) => {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Image 
+              source={require('../assets/images/back_icon.png')} 
+              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            />
           </TouchableOpacity>
 
           <View>
@@ -204,7 +208,10 @@ const AddTransactionScreen = ({ navigation }) => {
           <Text style={styles.inputLabel}>วันที่ทำรายการ</Text>
           <TouchableOpacity style={styles.dateInput} onPress={() => setDatePickerVisibility(true)}>
             <Text style={styles.dateText}>{formatDate(date)}</Text>
-            <Text>📅</Text>
+            <Image 
+              source={require('../assets/images/calendar_icon.png')} 
+              style={{ width: 40, height: 40 }} 
+            />
           </TouchableOpacity>
 
           {/* CATEGORY */}
