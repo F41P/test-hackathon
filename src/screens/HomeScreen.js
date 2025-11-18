@@ -1,35 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import Header from '../components/Header'; 
-import { useNavigation } from '@react-navigation/native';
-import { usePlots } from '../context/PlotContext';
+import { useNavigation, useFocusEffect  } from '@react-navigation/native';
+import { getSummary, getExpenseBreakdown, getIncomeBreakdown, getProfitByPlant } from '../services/dashboard.service';
 
-const NetProfitCard = () => {
+import { usePlots } from '../context/PlotContext';
+import { getPlots } from '../services/plot.service';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+import PieChart from 'react-native-pie-chart';
+
+const API_URL = "http://localhost:3005/api";
+
+// ----------------------------------------------------------------
+// ⭐ [FIX] 1. แก้ไข NetProfitCard ให้รับ props (ลบค่า hardcode)
+// ----------------------------------------------------------------
+const NetProfitCard = ({ income, expense, profit }) => {
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>กำไรสุทธิ</Text>
-      <Text style={styles.profitText}>150,000 บาท</Text>
+      <Text style={styles.profitText}>{profit.toLocaleString()} บาท</Text>
       <View style={styles.row}>
         <View>
           <Text style={styles.subText}>รายได้รวม</Text>
-          <Text style={styles.incomeText}>450,000 บาท</Text>
+          <Text style={styles.incomeText}>{income.toLocaleString()} บาท</Text>
         </View>
         <View style={{alignItems: 'flex-end'}}>
           <Text style={styles.subText}>ค่าใช้จ่ายรวม</Text>
-          <Text style={styles.expenseText}>300,000 บาท</Text>
+          <Text style={styles.expenseText}>{expense.toLocaleString()} บาท</Text>
         </View>
       </View>
     </View>
   );
 };
 
-const AnalyticsCard = () => {
 
+const AnalyticsCard = ({ expenseData = [], incomeData = [], profitData = [] }) => {
   const [activeTab, setActiveTab] = useState('expense'); 
+
+  const renderChartContent = (data, type) => {
+    let unit = '%'; 
+    
+    let dataForLegend = data; 
+    let dataForPie = data;     
+
+    if (type === 'profit') {
+      unit = ' บาท';
+      dataForPie = data.filter(item => parseFloat(item.amount) > 0); 
+    }
+
+    const seriesData = dataForPie.map((item, index) => ({
+      value: Math.abs(parseFloat(item.amount)),
+      color: BAR_COLORS[index % BAR_COLORS.length]
+    }));
+
+    return (
+      <>
+        <View style={styles.chartDisplayContainer}>
+          {dataForPie.length > 0 && seriesData.some(s => s.value > 0) ? ( 
+            <PieChart
+              widthAndHeight={140}
+              series={seriesData}    
+              coverRadius={0.65} 
+              coverFill={'#FFF'} 
+            />
+          ) : (
+            <View style={styles.chartPlaceholder} /> 
+          )}
+        </View>
+        
+        <View style={styles.legendContainer}>
+          {dataForLegend.length > 0 ? (
+            dataForLegend.map((item, index) => (
+              <View key={index} style={styles.legendItem}>
+                <View style={[styles.legendDot, { 
+                    backgroundColor: (item.amount < 0) ? '#e57373' : BAR_COLORS[index % BAR_COLORS.length] 
+                }]} />
+                
+                <Text style={styles.legendText}>
+                  {item.name} {
+                    (type === 'profit') 
+                      ? `${item.amount.toLocaleString()}${unit}`
+                      : `${item.percentage}${unit}`
+                  }
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.placeholderText}>ไม่มีข้อมูล</Text>
+          )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <View style={styles.card}>
-      {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity 
           style={activeTab === 'expense' ? styles.tabActive : styles.tab} 
@@ -54,24 +121,9 @@ const AnalyticsCard = () => {
       </View>
 
       <View style={styles.chartRow}>
-        {activeTab === 'expense' && (
-          <>
-            <View style={styles.chartPlaceholder} /> 
-            <View style={styles.legendContainer}>
-              <Text>ข้าวโพด 35%</Text>
-              <Text>ขิง 25%</Text>
-              <Text>ข้าวหอมมะลิ 20%</Text>
-              <Text>พริก 15%</Text>
-              <Text>ผักบุ้ง 5%</Text>
-            </View>
-          </>
-        )}
-        {activeTab === 'income' && (
-          <Text style={styles.placeholderText}>แสดงข้อมูล "รายได้" ที่นี่</Text>
-        )}
-        {activeTab === 'profit' && (
-          <Text style={styles.placeholderText}>แสดงข้อมูล "กำไร" ที่นี่</Text>
-        )}
+        {activeTab === 'expense' && renderChartContent(expenseData, 'expense')}
+        {activeTab === 'income' && renderChartContent(incomeData, 'income')}
+        {activeTab === 'profit' && renderChartContent(profitData, 'profit')}
       </View>
     </View>
   );
@@ -79,7 +131,8 @@ const AnalyticsCard = () => {
 
 const MyPlotsSection = () => {
   const navigation = useNavigation();
-  const { plots } = usePlots();
+  const { plots } = usePlots();          
+
   return (
     <View style={styles.section}>
       <View style={styles.row}>
@@ -92,10 +145,13 @@ const MyPlotsSection = () => {
       <View style={styles.plotGrid}>
         {plots.map((plot) => (
           <TouchableOpacity 
-            key={plot.id}
+            // ----------------------------------------------------------------
+            // ⭐ [FIX] 2. แก้ไข key (ต้องเป็น .id ที่มาจาก formatted)
+            // ----------------------------------------------------------------
+            key={plot.id} 
             style={styles.plotButton}
             onPress={() => navigation.navigate('PlotDetail', { 
-              plotId: plot.id, // (ส่ง ID ไปแทน)
+              plotId: plot.id, 
               plotName: plot.name 
             })}
           >
@@ -109,12 +165,103 @@ const MyPlotsSection = () => {
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
+  const { plots, setPlots } = usePlots();     
+  const [summary, setSummary] = useState({
+    income_total: 0,
+    expense_total: 0,
+    profit_total: 0,
+  });
+
+  const [expenseBreakdown, setExpenseBreakdown] = useState([]);
+  const [incomeBreakdown, setIncomeBreakdown] = useState([]);
+  const [profitBreakdown, setProfitBreakdown] = useState([]);
+
+  // ----------------------------------------------------------------
+  // ⭐ [FIX] 3. เพิ่มการตรวจสอบ user.user_id ใน service calls
+  // ----------------------------------------------------------------
+  const loadPlots = async () => {
+    if (!user?.user_id) return; // (เพิ่ม Guard clause)
+    try {
+      const res = await getPlots(user.user_id);
+      const formatted = res.map((p) => ({
+        id: p.plot_id,
+        name: p.plot_name,
+      }));
+      setPlots(formatted);
+    } catch (err) {
+      console.log("Load plots error:", err);
+    }
+  };
+
+
+  const loadSummary = async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await getSummary(user.user_id); 
+      console.log("SUMMARY:", res); 
+      setSummary(res); 
+    } catch (err) {
+      console.log("Summary error:", err);
+    }
+  };
+
+  const loadExpenseBreakdown = async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await getExpenseBreakdown(user.user_id, null); 
+      setExpenseBreakdown(res);
+    } catch (err) {
+      console.log("Load breakdown error:", err);
+    }
+  };
+
+  const loadIncomeBreakdown = async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await getIncomeBreakdown(user.user_id); 
+      setIncomeBreakdown(res);
+    } catch (err) {
+      console.log("Load income breakdown error:", err);
+    }
+  };
+
+  const loadProfitBreakdown = async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await getProfitByPlant(user.user_id); 
+      setProfitBreakdown(res);
+    } catch (err) {
+      console.log("Load profit breakdown error:", err);
+    }
+  };
+
+  useFocusEffect(
+  useCallback(() => {
+    if (user) {
+      loadSummary();
+      loadPlots();
+      loadExpenseBreakdown();
+      loadIncomeBreakdown();
+      loadProfitBreakdown();
+    }
+  }, [user])
+);
+
   return (
     <View style={styles.screenContainer}>
       <Header /> 
       <ScrollView>
-        <NetProfitCard />
-        <AnalyticsCard />
+        <NetProfitCard 
+          income={summary.income_total}
+          expense={summary.expense_total}
+          profit={summary.profit_total}
+        />
+        <AnalyticsCard 
+          expenseData={expenseBreakdown} 
+          incomeData={incomeBreakdown}
+          profitData={profitBreakdown}
+        />
         <MyPlotsSection />
         <View style={{ height: 100 }} /> 
       </ScrollView>
@@ -129,6 +276,13 @@ const HomeScreen = () => {
   );
 };
 
+export default HomeScreen;
+
+const BAR_COLORS = ["#FFC107", "#2196F3", "#4CAF50", "#FF5722", "#9C27B0"];
+
+// ----------------------------------------------------------------
+// ⭐ [FIX] 4. ลบ styles ที่ซ้ำซ้อนออก
+// ----------------------------------------------------------------
 const styles = StyleSheet.create({
   screenContainer: { 
     flex: 1, 
@@ -206,39 +360,61 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     minHeight: 140, 
   },
+  chartDisplayContainer: {
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chartPlaceholder: { 
     width: 140, 
     height: 140, 
     borderRadius: 70, 
-    backgroundColor: 'lightgrey' 
+    backgroundColor: '#f0f0f0' 
   },
-  legendContainer: {
-    justifyContent: 'center',
+  legendContainer: { 
+    justifyContent: 'center', 
+    flex: 1, 
+    paddingLeft: 20 
   },
-  placeholderText: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 16,
-    color: 'grey',
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 14,
+  },
+  placeholderText: { 
+    flex: 1, 
+    textAlign: 'center', 
+    fontSize: 16, 
+    color: 'grey' 
   },
   section: { 
-    paddingHorizontal: 15,
-    marginTop: 10,
+    paddingHorizontal: 15, 
+    marginTop: 10 
   },
   sectionTitle: { 
     fontSize: 18, 
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: 'bold', 
+    color: '#333' 
   },
   addPlotText: { 
-    color: '#84a58b',
-    fontWeight: 'bold',
+    color: '#84a58b', 
+    fontWeight: 'bold' 
   },
   plotGrid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
     justifyContent: 'space-between', 
-    marginTop: 10,
+    marginTop: 10 
   },
   plotButton: { 
     borderWidth: 1, 
@@ -264,9 +440,7 @@ const styles = StyleSheet.create({
   },
   fabText: { 
     fontSize: 30, 
-    color: 'white',
-    lineHeight: 34
+    color: 'white', 
+    lineHeight: 34 
   }
 });
-
-export default HomeScreen;

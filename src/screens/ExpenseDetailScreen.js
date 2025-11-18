@@ -1,24 +1,96 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext'; 
+import { getExpenseBreakdown } from '../services/dashboard.service'; 
 
-// ข้อมูลจำลองสำหรับ "รายการค่าใช้จ่าย"
-const expenseData = [
-  { id: 1, name: 'ค่าปุ๋ย', amount: '9,XXX บาท', percentage: '35%' },
-  { id: 2, name: 'ค่าแรงงาน', amount: '7,XXX บาท', percentage: '25%' },
-  { id: 3, name: 'ค่าเครื่องจักร', amount: '5,XXX บาท', percentage: '20%' },
-  { id: 4, name: 'ค่ายาฆ่าศัตรูพืช', amount: '4,XXX บาท', percentage: '15%' },
-  { id: 5, name: 'ค่าพันธุ์ข้าว', amount: '1,XXX บาท', percentage: '5%' },
-];
+import PieChart from 'react-native-pie-chart';
+
+const BAR_COLORS = ["#FFC107", "#2196F3", "#4CAF50", "#FF5722", "#9C27B0"];
+
+const DonutChart = ({ data = [] }) => {
+  // เช็คว่ามีข้อมูล หรือ ข้อมูลทุกตัวเป็น 0 หรือไม่
+  if (data.length === 0 || data.every(item => parseFloat(item.amount) === 0)) {
+    return <View style={styles.chartPlaceholder} />;
+  }
+  
+  // ----------------------------------------------------------------
+  // ⭐ [FIX]
+  // ----------------------------------------------------------------
+  // 1. A. รวม series และ sliceColor เป็น array เดียว
+  const seriesData = data.map((item, index) => ({
+    value: Math.abs(parseFloat(item.amount)),
+    color: BAR_COLORS[index % BAR_COLORS.length]
+  }));
+  // ----------------------------------------------------------------
+
+
+  return (
+    <View style={styles.chartDisplayContainer}>
+      <PieChart
+        widthAndHeight={180} 
+        series={seriesData}       // 1. B. ใช้ array ใหม่
+        // sliceColor={...}       // (ลบ prop นี้ทิ้ง)
+        coverRadius={0.65} 
+        coverFill={'#F4F7F2'} 
+      />
+    </View>
+  );
+};
+
 
 const ExpenseDetailScreen = ({ navigation, route }) => {
-  // 1. รับชื่อแปลง (plotName) ที่ส่งมาจาก PlotDetailScreen
-  const { plotName } = route.params;
+  const { user } = useAuth(); 
+  const { plotName, plotId } = route.params; 
+
+  const [loading, setLoading] = useState(true);
+  const [expenseData, setExpenseData] = useState([]);
+  const [totalExpense, setTotalExpense] = useState(0);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user || !plotId) return;
+
+      try {
+        setLoading(true);
+        // (เราใช้ API ที่เราสร้างไว้ใน controllers/dashboard.controller.js)
+        const data = await getExpenseBreakdown(user.user_id, plotId);
+        
+        const total = data.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+
+        setExpenseData(data);
+        setTotalExpense(total);
+      } catch (err) {
+        console.log("Load expense detail error:", err);
+        alert("ไม่สามารถโหลดข้อมูลได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user, plotId]);
+
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>{"<"}</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>{plotName}</Text>
+          <View style={{width: 40}} />
+        </View>
+        <ActivityIndicator size="large" color="#84a58b" style={{ marginTop: 50 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        {/* --- Header ที่สร้างเอง --- */}
+        {/* --- Header --- */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>{"<"}</Text>
@@ -27,37 +99,39 @@ const ExpenseDetailScreen = ({ navigation, route }) => {
           <View style={{width: 40}} />
         </View>
 
-        {/* --- สรุปค่าใช้จ่าย (เหมือนใน PlotDetail) --- */}
+        {/* --- สรุปค่าใช้จ่าย --- */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, styles.expenseCard]}>
-            <Text style={styles.summaryLabel}>ค่าใช้จ่าย</Text>
-            <Text style={styles.summaryAmount}>28,XXX บาท</Text>
+            <Text style={styles.summaryLabel}>ค่าใช้จ่าย (แปลงนี้)</Text>
+            <Text style={styles.summaryAmount}>{totalExpense.toLocaleString()} บาท</Text>
           </View>
         </View>
 
-        {/* --- Donut Chart Placeholder --- */}
         <View style={styles.chartContainer}>
-          <View style={styles.chartPlaceholder} />
+          <DonutChart data={expenseData} />
         </View>
 
         {/* --- รายการค่าใช้จ่าย --- */}
         <View style={styles.listContainer}>
-          {expenseData.map((item) => (
-            <View style={styles.listItem} key={item.id}>
-              <View style={styles.itemLeft}>
-                <Text style={styles.itemPercentage}>{item.percentage}</Text>
-                <Text style={styles.itemName}>{item.name}</Text>
+          {expenseData.length === 0 ? (
+            <Text style={{ textAlign: 'center', color: 'grey', padding: 20 }}>ไม่มีข้อมูลค่าใช้จ่ายสำหรับแปลงนี้</Text>
+          ) : (
+            expenseData.map((item, index) => (
+              <View style={styles.listItem} key={index}>
+                <View style={styles.itemLeft}>
+                  <Text style={styles.itemPercentage}>{item.percentage}%</Text>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                </View>
+                <Text style={styles.itemAmount}>{item.amount.toLocaleString()} บาท</Text>
               </View>
-              <Text style={styles.itemAmount}>{item.amount}</Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// Stylesheet (อิงจากในรูป)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7F2' },
   header: {
@@ -75,19 +149,32 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
   },
-  expenseCard: { backgroundColor: '#ffcdd2' }, // สีแดงอ่อน
+  expenseCard: { backgroundColor: '#ffcdd2' }, 
   summaryLabel: { fontSize: 16, color: '#333' },
   summaryAmount: { fontSize: 22, fontWeight: 'bold', marginTop: 5 },
+  
+  // --- Chart Styles ---
   chartContainer: {
     alignItems: 'center',
     marginVertical: 20,
+    paddingHorizontal: 10,
   },
+  
+  chartDisplayContainer: {
+    width: 180,
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   chartPlaceholder: {
     width: 180,
     height: 180,
     borderRadius: 90,
     backgroundColor: 'lightgrey',
   },
+  
+  // --- List Styles ---
   listContainer: {
     paddingHorizontal: 20,
   },
@@ -106,7 +193,7 @@ const styles = StyleSheet.create({
   itemPercentage: {
     fontSize: 14,
     color: 'grey',
-    width: 50,
+    width: 50, 
   },
   itemName: {
     fontSize: 16,
