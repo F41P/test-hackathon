@@ -41,6 +41,12 @@ const NetProfitCard = ({ income, expense, profit }) => {
     </View>
   );
 };
+// --------------------------------------------------------
+//  Analytics Card (สรุปค่าใช้จ่ายตามพืช)
+// --------------------------------------------------------
+// const AnalyticsCard = ({ reloadSignal }) => {
+//   const { user } = useAuth();
+//   const [activeTab, setActiveTab] = useState("expense");
 
 // ========================================================
 // 2. Analytics Card (กราฟวงกลม แยกประเภท)
@@ -206,6 +212,10 @@ const AnalyticsCard = ({ reloadSignal }) => {
           </>
         )}
       </View>
+
+      <Text style={{ marginTop: 10, textAlign: "center", color: "grey" }}>
+        รวมค่าใช้จ่ายทั้งหมด {total.toLocaleString()} บาท
+      </Text>
     </View>
   );
 };

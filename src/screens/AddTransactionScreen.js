@@ -132,12 +132,14 @@ const AddTransactionScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>{"<"}</Text>
           </TouchableOpacity>
+
           <View>
             <Text style={styles.title}>เพิ่มรายการ</Text>
             <Text style={styles.subtitle}>บันทึกรายรับ-รายจ่าย</Text>
           </View>
         </View>
 
+        {/* TABS */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "expense" && styles.tabActive]}
@@ -162,6 +164,7 @@ const AddTransactionScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* FORM */}
         <View style={styles.form}>
           <Text style={styles.inputLabel}>จำนวนเงิน (บาท)</Text>
           <TextInput
@@ -178,6 +181,7 @@ const AddTransactionScreen = ({ navigation }) => {
             <Text>📅</Text>
           </TouchableOpacity>
 
+          {/* CATEGORY */}
           <Text style={styles.inputLabel}>หมวดหมู่</Text>
           {loadingCategories ? (
             <ActivityIndicator style={{height: 55}} />
@@ -198,6 +202,7 @@ const AddTransactionScreen = ({ navigation }) => {
             />
           )}
 
+          {/* PLOT */}
           <Text style={styles.inputLabel}>แปลงที่เกี่ยวข้อง</Text>
           <DropDownPicker
             open={plotOpen}
@@ -214,6 +219,7 @@ const AddTransactionScreen = ({ navigation }) => {
             placeholder="เลือกแปลง (ไม่บังคับ)"
           />
 
+          {/* NOTES */}
           <Text style={styles.inputLabel}>หมายเหตุ (ถ้ามี)</Text>
           <TextInput
             style={styles.input}
@@ -237,7 +243,6 @@ const AddTransactionScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
   innerContainer: { flexGrow: 1, padding: 20, paddingBottom: 100 },

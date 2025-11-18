@@ -137,7 +137,6 @@ const CompareScreen = ({ navigation, route }) => {
       </View>
     );
   };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
