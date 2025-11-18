@@ -114,7 +114,7 @@
 // export default OTPScreen;
 
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from "axios";
 import { useAuth } from '../context/AuthContext';
@@ -195,7 +195,10 @@ const OTPScreen = ({ navigation, route }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>{"<"} เปลี่ยนอีเมล</Text>
+          <Image 
+            source={require('../assets/images/back_icon.png')} 
+            style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+          />
         </TouchableOpacity>
 
         <Text style={styles.title}>ยืนยัน OTP</Text>

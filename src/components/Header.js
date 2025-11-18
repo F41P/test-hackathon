@@ -55,7 +55,7 @@
 // export default Header;
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -130,7 +130,10 @@ const Header = () => {
         <Text style={styles.greetingText}>สวัสดี, คุณ {displayName}</Text>
 
         <TouchableOpacity onPress={() => navigation.navigate('Compare')}>
-          <Text style={styles.menuIcon}>📊</Text> 
+          <Image 
+              source={require('../assets/images/menu_icon.png')} 
+              style={{ width: 28, height: 28, tintColor: 'white' }} 
+           />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

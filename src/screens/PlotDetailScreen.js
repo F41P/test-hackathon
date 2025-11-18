@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -97,7 +98,10 @@ const PlotDetailScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Image 
+              source={require('../assets/images/back_icon.png')} 
+              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            />
           </TouchableOpacity>
           <Text style={styles.title}>{plotName}</Text>
           <View style={{ width: 60 }} />
@@ -153,7 +157,6 @@ const PlotDetailScreen = ({ navigation, route }) => {
 >
   <Text style={styles.addYieldText}>+ เพิ่มผลผลิตย้อนหลัง</Text>
 </TouchableOpacity>
-
 
 
         {/* Transactions */}
