@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -111,7 +112,10 @@ const AddPlotScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Image 
+              source={require('../assets/images/back_icon.png')} 
+              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            />
           </TouchableOpacity>
           <View>
             <Text style={styles.title}>เพิ่มแปลงใหม่</Text>
@@ -172,6 +176,10 @@ const AddPlotScreen = ({ navigation }) => {
             onPress={() => setStartPickerVisible(true)}
           >
             <Text style={styles.dateText}>{formatDate(startDate)}</Text>
+            <Image 
+              source={require('../assets/images/calendar_icon.png')}
+              style={{ width: 24, height: 24 }} 
+            />
           </TouchableOpacity>
 
           {/* วันที่เก็บเกี่ยว */}

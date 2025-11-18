@@ -153,7 +153,7 @@
 // export default ProfileScreen;
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import axios from 'axios';
@@ -242,7 +242,10 @@ const ProfileScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Image 
+              source={require('../assets/images/back_icon.png')} 
+              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            />
           </TouchableOpacity>
 
           <View>
