@@ -136,12 +136,14 @@ const CompareScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ padding: 20 }}
-        onScroll={() => {
-          setOpen1(false);
-          setOpen2(false);
-        }}
-      >
+      nestedScrollEnabled={true}
+      scrollEnabled={!open1 && !open2} 
+      contentContainerStyle={{ padding: 20 }}
+      onScrollBeginDrag={() => {
+        setOpen1(false);
+        setOpen2(false);
+      }}
+    >
         {/* Header ------------------------- */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -156,32 +158,39 @@ const CompareScreen = ({ navigation, route }) => {
 
         {/* DROPDOWN ------------------------- */}
         <View style={styles.row}>
-          <DropDownPicker
-            open={open1}
-            value={plot1Value}
-            setOpen={setOpen1}
-            setValue={setPlot1Value}
-            items={plotItems}
-            placeholder="เลือกแปลง"
-            containerStyle={[styles.ddContainer, { zIndex: 2000 }]}
-            style={styles.dd}
-            dropDownContainerStyle={styles.ddDrop}
-            onOpen={() => setOpen2(false)}
-          />
+  
+  <View style={[styles.ddContainer, { zIndex: 3000 }]}>
+    <DropDownPicker
+      open={open1}
+      value={plot1Value}
+      setOpen={setOpen1}
+      setValue={setPlot1Value}
+      items={plotItems}
+      placeholder="เลือกแปลง"
+      style={styles.dd}
+      dropDownContainerStyle={styles.ddDrop}
+      onOpen={() => setOpen2(false)}
+      listMode="SCROLLVIEW"
+    />
+  </View>
 
-          <DropDownPicker
-            open={open2}
-            value={plot2Value}
-            setOpen={setOpen2}
-            setValue={setPlot2Value}
-            items={plotItems}
-            placeholder="เลือกแปลง"
-            containerStyle={[styles.ddContainer, { zIndex: 1000 }]}
-            style={styles.dd}
-            dropDownContainerStyle={styles.ddDrop}
-            onOpen={() => setOpen1(false)}
-          />
-        </View>
+  <View style={[styles.ddContainer, { zIndex: 2000 }]}>
+    <DropDownPicker
+      open={open2}
+      value={plot2Value}
+      setOpen={setOpen2}
+      setValue={setPlot2Value}
+      items={plotItems}
+      placeholder="เลือกแปลง"
+      style={styles.dd}
+      dropDownContainerStyle={styles.ddDrop}
+      onOpen={() => setOpen1(false)}
+      listMode="SCROLLVIEW"
+    />
+  </View>
+
+</View>
+
 
         {/* CHART ------------------------- */}
         <View style={styles.chartBox}>
@@ -289,6 +298,7 @@ const styles = StyleSheet.create({
   }),
 
   legendRow: {
+    marginTop: 15,
     flexDirection: "row",
     justifyContent: "center",
     gap: 20,

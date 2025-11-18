@@ -1,7 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 // ดึง service จริงของคุณ
 import { getPlotById, getRoundsByPlot } from "../services/plot.service";
@@ -22,43 +29,51 @@ const PlotDetailScreen = ({ navigation, route }) => {
   const safeDate = (d) => (d ? String(d).slice(0, 10) : "-");
 
   useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+    useCallback(() => {
+      let isActive = true;
 
-    const load = async () => {
-      try {
-        // 1) ดึงข้อมูลแปลง
-        const plotRes = await getPlotById(plotId);
-        if (!isActive) return;
-        setPlot(plotRes);
+      const load = async () => {
+        try {
+          // 1) ดึงข้อมูลแปลง
+          const plotRes = await getPlotById(plotId);
+          if (!isActive) return;
+          setPlot(plotRes);
 
-        // 2) ดึงรอบทั้งหมด
-        const rounds = await getRoundsByPlot(plotId);
-        if (Array.isArray(rounds) && rounds.length > 0) {
-          const latest = rounds[rounds.length - 1];
-          setRound(latest);
+          // 2) ดึงรอบทั้งหมด
+          const rounds = await getRoundsByPlot(plotId);
+          if (Array.isArray(rounds) && rounds.length > 0) {
+            const latest = rounds[rounds.length - 1];
+            setRound(latest);
 
-          // 3) ดึง transactions ของรอบล่าสุด
-          const tx = await getTransactions(latest.round_id);
-          if (isActive) setTransactions(tx);
+            // 3) ดึง transactions ของรอบล่าสุด
+            const tx = await getTransactions(latest.round_id);
+            if (isActive) setTransactions(tx);
+          }
+
+          setLoading(false);
+        } catch (err) {
+          console.log("Load plot detail error:", err);
         }
+      };
 
-        setLoading(false);
-      } catch (err) {
-        console.log("Load plot detail error:", err);
-      }
-    };
+      load();
 
-    load();
-
-    return () => { isActive = false; };
-  }, [plotId])
-);
-
+      return () => {
+        isActive = false;
+      };
+    }, [plotId])
+  );
 
   if (loading || !plot) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fff",
+        }}
+      >
         <ActivityIndicator size="large" color="#84a58b" />
         <Text>กำลังโหลดข้อมูล...</Text>
       </View>
@@ -67,11 +82,11 @@ const PlotDetailScreen = ({ navigation, route }) => {
 
   // สรุปรายรับ-รายจ่ายจริงตามข้อมูลจาก backend
   const incomeTotal = transactions
-    .filter(tx => tx.amount > 0)
+    .filter((tx) => tx.amount > 0)
     .reduce((s, tx) => s + tx.amount, 0);
 
   const expenseTotal = transactions
-    .filter(tx => tx.amount < 0)
+    .filter((tx) => tx.amount < 0)
     .reduce((s, tx) => s + Math.abs(tx.amount), 0);
 
   const format = (num) => new Intl.NumberFormat("th-TH").format(num);
@@ -97,7 +112,17 @@ const PlotDetailScreen = ({ navigation, route }) => {
 
           <TouchableOpacity
             style={[styles.summaryCard, styles.expenseCard]}
-            onPress={() => navigation.navigate("ExpenseDetail", { plotId })}
+            onPress={() => {
+              console.log("🚀 Navigating with:", {
+                plotId: plot?.plot_id, // เช็คว่ามีค่าไหม
+                plotName: plot?.plot_name,
+              });
+
+              navigation.navigate("ExpenseDetail", {
+                plotId: plot?.plot_id || plotId, // fallback
+                plotName: plot?.plot_name || plotName,
+              });
+            }}
           >
             <Text style={styles.summaryLabel}>ค่าใช้จ่าย</Text>
             <Text style={styles.summaryAmount}>{format(expenseTotal)} บาท</Text>
@@ -162,20 +187,19 @@ const PlotDetailScreen = ({ navigation, route }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F7F2' },
+  container: { flex: 1, backgroundColor: "#F4F7F2" },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
   },
-  backButton: { fontSize: 28, color: '#333', fontWeight: 'bold' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#84a58b' },
+  backButton: { fontSize: 28, color: "#333", fontWeight: "bold" },
+  title: { fontSize: 24, fontWeight: "bold", color: "#84a58b" },
   summaryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingHorizontal: 15,
   },
   summaryCard: {
@@ -184,49 +208,49 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     margin: 5,
   },
-  incomeCard: { backgroundColor: '#c8e6c9' },
-  expenseCard: { backgroundColor: '#ffcdd2' },
-  summaryLabel: { fontSize: 16, color: '#333' },
-  summaryAmount: { fontSize: 22, fontWeight: 'bold', marginTop: 5 },
+  incomeCard: { backgroundColor: "#c8e6c9" },
+  expenseCard: { backgroundColor: "#ffcdd2" },
+  summaryLabel: { fontSize: 16, color: "#333" },
+  summaryAmount: { fontSize: 22, fontWeight: "bold", marginTop: 5 },
   infoSection: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     margin: 15,
     borderRadius: 12,
   },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
-  historyNote: { fontSize: 16, fontWeight: 'bold' },
-  historyDate: { fontSize: 14, color: 'grey' },
-  historyIncome: { fontSize: 16, color: 'green', fontWeight: 'bold' },
-  historyExpense: { fontSize: 16, color: 'red', fontWeight: 'bold' },
+  historyNote: { fontSize: 16, fontWeight: "bold" },
+  historyDate: { fontSize: 14, color: "grey" },
+  historyIncome: { fontSize: 16, color: "green", fontWeight: "bold" },
+  historyExpense: { fontSize: 16, color: "red", fontWeight: "bold" },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 25,
     bottom: 25,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#84a58b',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#84a58b",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 4,
   },
-  fabText: { fontSize: 30, color: 'white', lineHeight: 34 }
+  fabText: { fontSize: 30, color: "white", lineHeight: 34 },
 });
 
 export default PlotDetailScreen;
