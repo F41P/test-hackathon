@@ -11,10 +11,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DropDownPicker from "react-native-dropdown-picker";
 import axios from "axios";
 
+// 1. นำเข้า AuthContext
+import { useAuth } from "../context/AuthContext"; 
+
 const API_URL = "http://localhost:3005/api/dashboard/plots";
 
 const CompareScreen = ({ navigation, route }) => {
-  const user_id = route.params?.user_id || 1;
+  // 2. ดึงข้อมูล user ที่ login อยู่จาก Context
+  const { user } = useAuth();
+  
+  // ใช้ user_id ของคนที่ login อยู่
+  const user_id = user?.user_id; 
 
   const [plotItems, setPlotItems] = useState([]);
   const [plotData, setPlotData] = useState({});
@@ -26,14 +33,17 @@ const CompareScreen = ({ navigation, route }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // โหลดข้อมูลครั้งแรก
+  // โหลดข้อมูลครั้งแรกเมื่อมี user_id
   useEffect(() => {
-    fetchPlotSummary();
-  }, []);
+    if (user_id) {
+      fetchPlotSummary();
+    }
+  }, [user_id]); // เพิ่ม dependency ให้ทำงานเมื่อ user_id พร้อม
 
   const fetchPlotSummary = async () => {
     try {
       setLoading(true);
+      // ส่ง user_id ที่ได้จาก context ไปกับ request
       const res = await axios.get(API_URL, { params: { user_id } });
 
       const items = res.data.map((p) => ({
@@ -57,9 +67,12 @@ const CompareScreen = ({ navigation, route }) => {
       if (items.length >= 2) {
         setPlot1Value(items[0].value);
         setPlot2Value(items[1].value);
+      } else if (items.length === 1) {
+        setPlot1Value(items[0].value);
       }
     } catch (e) {
-      alert("โหลดข้อมูลไม่สำเร็จ");
+      // console.error(e);
+      // alert("โหลดข้อมูลไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -84,22 +97,24 @@ const CompareScreen = ({ navigation, route }) => {
   const maxVal = Math.max(...values, 0);
   const minVal = Math.min(...values, 0);
   const diff = maxVal - minVal;
-  const scale = chartHeight / diff;
+  
+  // ป้องกันการหารด้วย 0 กรณีข้อมูลเป็น 0 ทั้งหมด
+  const scale = diff === 0 ? 1 : chartHeight / diff;
 
   // ระดับ baseline
-  const baseY = (maxVal / diff) * chartHeight;
+  const baseY = diff === 0 ? chartHeight / 2 : (maxVal / diff) * chartHeight;
 
   const renderBar = (value, color) => {
     const height = Math.abs(value) * scale;
     const isPositive = value >= 0;
-    const labelOffset = 16; // ระยะห่างให้เลขไม่ติดแท่ง
+    const labelOffset = 16; 
 
     return (
       <View style={styles.barWrap}>
         {/* ตัวเลข */}
         <Text
           style={[
-            styles.barValue,
+            styles.barValueLabel, // เปลี่ยนชื่อ style ไม่ให้ซ้ำกับด้านล่าง
             {
               top: isPositive ? baseY - height - labelOffset : baseY + height,
               color: value < 0 ? "#d9534f" : "#333",
@@ -136,15 +151,15 @@ const CompareScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-      nestedScrollEnabled={true}
-      scrollEnabled={!open1 && !open2} 
-      contentContainerStyle={{ padding: 20 }}
-      onScrollBeginDrag={() => {
-        setOpen1(false);
-        setOpen2(false);
-      }}
-    >
-        {/* Header ------------------------- */}
+        nestedScrollEnabled={true}
+        scrollEnabled={!open1 && !open2}
+        contentContainerStyle={{ padding: 20 }}
+        onScrollBeginDrag={() => {
+          setOpen1(false);
+          setOpen2(false);
+        }}
+      >
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.back}>{"<"}</Text>
@@ -156,43 +171,40 @@ const CompareScreen = ({ navigation, route }) => {
           รายได้ ค่าใช้จ่าย กำไร ในแต่ละรอบการผลิต
         </Text>
 
-        {/* DROPDOWN ------------------------- */}
+        {/* DROPDOWN */}
         <View style={styles.row}>
-  
-  <View style={[styles.ddContainer, { zIndex: 3000 }]}>
-    <DropDownPicker
-      open={open1}
-      value={plot1Value}
-      setOpen={setOpen1}
-      setValue={setPlot1Value}
-      items={plotItems}
-      placeholder="เลือกแปลง"
-      style={styles.dd}
-      dropDownContainerStyle={styles.ddDrop}
-      onOpen={() => setOpen2(false)}
-      listMode="SCROLLVIEW"
-    />
-  </View>
+          <View style={[styles.ddContainer, { zIndex: 3000 }]}>
+            <DropDownPicker
+              open={open1}
+              value={plot1Value}
+              setOpen={setOpen1}
+              setValue={setPlot1Value}
+              items={plotItems}
+              placeholder="เลือกแปลง"
+              style={styles.dd}
+              dropDownContainerStyle={styles.ddDrop}
+              onOpen={() => setOpen2(false)}
+              listMode="SCROLLVIEW"
+            />
+          </View>
 
-  <View style={[styles.ddContainer, { zIndex: 2000 }]}>
-    <DropDownPicker
-      open={open2}
-      value={plot2Value}
-      setOpen={setOpen2}
-      setValue={setPlot2Value}
-      items={plotItems}
-      placeholder="เลือกแปลง"
-      style={styles.dd}
-      dropDownContainerStyle={styles.ddDrop}
-      onOpen={() => setOpen1(false)}
-      listMode="SCROLLVIEW"
-    />
-  </View>
+          <View style={[styles.ddContainer, { zIndex: 2000 }]}>
+            <DropDownPicker
+              open={open2}
+              value={plot2Value}
+              setOpen={setOpen2}
+              setValue={setPlot2Value}
+              items={plotItems}
+              placeholder="เลือกแปลง"
+              style={styles.dd}
+              dropDownContainerStyle={styles.ddDrop}
+              onOpen={() => setOpen1(false)}
+              listMode="SCROLLVIEW"
+            />
+          </View>
+        </View>
 
-</View>
-
-
-        {/* CHART ------------------------- */}
+        {/* CHART */}
         <View style={styles.chartBox}>
           <View style={styles.chartArea}>
             {/* baseline */}
@@ -226,16 +238,16 @@ const CompareScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* SUMMARY ------------------------- */}
+        {/* SUMMARY */}
         <View style={styles.summaryBox}>
           <Text style={styles.summaryTitle}>ข้อสรุป และคำแนะนำเบื้องต้น</Text>
 
           <Text style={styles.summaryText}>
-            • {data1.name} ต้นทุน: {fmt(data1.expense)} บาท
+            • {data1.name || "แปลง 1"} ต้นทุน: {fmt(data1.expense)} บาท
           </Text>
 
           <Text style={styles.summaryText}>
-            • {data2.name} {data2.profit < 0 ? "ขาดทุน" : "ทำกำไร"}:{" "}
+            • {data2.name || "แปลง 2"} {data2.profit < 0 ? "ขาดทุน" : "ทำกำไร"}:{" "}
             {fmt(data2.profit)} บาท
           </Text>
         </View>
@@ -290,12 +302,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
 
-  barValue: (isPositive, v) => ({
+  barValueLabel: { // เปลี่ยนชื่อ class เพื่อความชัดเจน
+    position: "absolute",
     fontSize: 13,
     fontWeight: "600",
-    color: v < 0 ? "red" : "#333",
+    textAlign: "center",
+    width: 60, // เพิ่มความกว้างนิดหน่อยกันตกขอบ
     marginBottom: 3,
-  }),
+  },
 
   legendRow: {
     marginTop: 15,
@@ -309,21 +323,4 @@ const styles = StyleSheet.create({
   summaryBox: { backgroundColor: "#fff", padding: 15, borderRadius: 12 },
   summaryTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   summaryText: { fontSize: 15, marginBottom: 6 },
-
-  barNumber: {
-    position: "absolute",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    width: 50,
-    alignSelf: "center",
-    opacity: 0.9,
-  },
-  barValue: {
-    position: "absolute",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    width: 50,
-  },
 });
