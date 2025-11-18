@@ -1,121 +1,353 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  ActivityIndicator,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { PieChart } from "react-native-chart-kit";
+import axios from "axios";
 
-// ข้อมูลจำลองสำหรับ "รายการค่าใช้จ่าย"
-const expenseData = [
-  { id: 1, name: 'ค่าปุ๋ย', amount: '9,XXX บาท', percentage: '35%' },
-  { id: 2, name: 'ค่าแรงงาน', amount: '7,XXX บาท', percentage: '25%' },
-  { id: 3, name: 'ค่าเครื่องจักร', amount: '5,XXX บาท', percentage: '20%' },
-  { id: 4, name: 'ค่ายาฆ่าศัตรูพืช', amount: '4,XXX บาท', percentage: '15%' },
-  { id: 5, name: 'ค่าพันธุ์ข้าว', amount: '1,XXX บาท', percentage: '5%' },
-];
+const screenWidth = Dimensions.get("window").width;
 
 const ExpenseDetailScreen = ({ navigation, route }) => {
-  // 1. รับชื่อแปลง (plotName) ที่ส่งมาจาก PlotDetailScreen
-  const { plotName } = route.params;
+  const { plotId, plotName } = route.params || {};
+
+  const [loading, setLoading] = useState(true);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState(null);
+
+  // สีสำหรับ Pie Chart
+  const chartColors = [
+    "#FF6B6B", // แดง
+    "#4ECDC4", // เขียวอมฟ้า
+    "#45B7D1", // ฟ้า
+    "#FFA07A", // ส้ม
+    "#98D8C8", // เขียวอ่อน
+    "#F7DC6F", // เหลือง
+    "#BB8FCE", // ม่วง
+    "#85C1E2", // ฟ้าอ่อน
+  ];
+
+  useEffect(() => {
+    console.log("📦 Route params:", { plotId, plotName });
+
+    if (!plotId) {
+      setError("ไม่พบ plotId");
+      setLoading(false);
+      return;
+    }
+
+    loadExpense();
+  }, [plotId]);
+
+  const loadExpense = async () => {
+    try {
+      const API =
+        Platform.OS === "android"
+          ? "http://10.0.2.2:3005"
+          : "http://localhost:3005";
+
+      const url = `${API}/api/dashboard/plot-expense-detail/${plotId}`;
+
+      console.log("🌐 Calling API:", url);
+
+      const res = await axios.get(url);
+
+      console.log("✅ Response:", res.data);
+
+      setTotalExpense(res.data.total_expense || 0);
+      setItems(res.data.details || []);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Load expense error:", err.response?.data || err.message);
+      setError("ไม่สามารถโหลดข้อมูลได้");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fmt = (n) => Number(n || 0).toLocaleString();
+
+  // เตรียมข้อมูลสำหรับ Pie Chart
+  const pieChartData = items.map((item, index) => ({
+    name: item.name || "ไม่ระบุ",
+    amount: Number(item.amount),
+    color: chartColors[index % chartColors.length],
+    legendFontColor: "#333",
+    legendFontSize: 14,
+  }));
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#84a58b" />
+          <Text style={styles.loadingText}>กำลังโหลดข้อมูล...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              setError(null);
+              loadExpense();
+            }}
+          >
+            <Text style={styles.retryText}>ลองอีกครั้ง</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        {/* --- Header ที่สร้างเอง --- */}
+        {/* HEADER */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>{"<"}</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>{plotName}</Text>
-          <View style={{width: 40}} />
+          <Text style={styles.title}>{plotName || "รายละเอียดค่าใช้จ่าย"}</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        {/* --- สรุปค่าใช้จ่าย (เหมือนใน PlotDetail) --- */}
+        {/* SUMMARY */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, styles.expenseCard]}>
-            <Text style={styles.summaryLabel}>ค่าใช้จ่าย</Text>
-            <Text style={styles.summaryAmount}>28,XXX บาท</Text>
+            <Text style={styles.summaryLabel}>ค่าใช้จ่ายทั้งหมด</Text>
+            <Text style={styles.summaryAmount}>{fmt(totalExpense)} บาท</Text>
           </View>
         </View>
 
-        {/* --- Donut Chart Placeholder --- */}
-        <View style={styles.chartContainer}>
-          <View style={styles.chartPlaceholder} />
-        </View>
+        {/* PIE CHART */}
+        {items.length > 0 && (
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={pieChartData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={{
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              }}
+              accessor="amount"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              absolute // แสดงตัวเลขจริงแทน %
+            />
+          </View>
+        )}
 
-        {/* --- รายการค่าใช้จ่าย --- */}
+        {/* LIST */}
         <View style={styles.listContainer}>
-          {expenseData.map((item) => (
-            <View style={styles.listItem} key={item.id}>
-              <View style={styles.itemLeft}>
-                <Text style={styles.itemPercentage}>{item.percentage}</Text>
-                <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.listTitle}>รายการค่าใช้จ่าย</Text>
+
+          {items.length === 0 ? (
+            <Text style={styles.emptyText}>ยังไม่มีรายการค่าใช้จ่าย</Text>
+          ) : (
+            items.map((item, index) => (
+              <View style={styles.listItem} key={index}>
+                <View style={styles.itemLeft}>
+                  <View
+                    style={[
+                      styles.colorDot,
+                      { backgroundColor: chartColors[index % chartColors.length] },
+                    ]}
+                  />
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{item.name || "ไม่ระบุ"}</Text>
+                    <Text style={styles.itemPercentage}>{item.percentage}%</Text>
+                  </View>
+                </View>
+                <Text style={styles.itemAmount}>{fmt(item.amount)} บาท</Text>
               </View>
-              <Text style={styles.itemAmount}>{item.amount}</Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// Stylesheet (อิงจากในรูป)
+export default ExpenseDetailScreen;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F7F2' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F7F2",
+  },
+
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
-  backButton: { fontSize: 28, color: '#333', fontWeight: 'bold' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#84a58b' },
+
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+
+  errorText: {
+    fontSize: 16,
+    color: "#d32f2f",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+
+  retryButton: {
+    backgroundColor: "#84a58b",
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+
+  retryText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  backButton: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#84a58b",
+    flex: 1,
+    textAlign: "center",
+  },
+
   summaryContainer: {
     paddingHorizontal: 20,
+    marginBottom: 20,
   },
+
   summaryCard: {
-    padding: 15,
+    padding: 20,
     borderRadius: 12,
   },
-  expenseCard: { backgroundColor: '#ffcdd2' }, // สีแดงอ่อน
-  summaryLabel: { fontSize: 16, color: '#333' },
-  summaryAmount: { fontSize: 22, fontWeight: 'bold', marginTop: 5 },
+
+  expenseCard: {
+    backgroundColor: "#ffcdd2",
+  },
+
+  summaryLabel: {
+    fontSize: 16,
+    color: "#333",
+  },
+
+  summaryAmount: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginTop: 8,
+    color: "#333",
+  },
+
   chartContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 20,
+    backgroundColor: "white",
+    marginHorizontal: 20,
+    borderRadius: 12,
+    paddingVertical: 20,
   },
-  chartPlaceholder: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'lightgrey',
-  },
+
   listContainer: {
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
+
+  listTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: "#333",
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 16,
+    paddingVertical: 30,
+  },
+
   listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 15,
+    backgroundColor: "white",
+    borderRadius: 8,
+    marginBottom: 8,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
+
   itemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
-  itemPercentage: {
-    fontSize: 14,
-    color: 'grey',
-    width: 50,
+
+  colorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
   },
+
+  itemInfo: {
+    flex: 1,
+  },
+
   itemName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
   },
+
+  itemPercentage: {
+    fontSize: 13,
+    color: "#666",
+  },
+
   itemAmount: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "600",
+    color: "#d32f2f",
   },
 });
-
-export default ExpenseDetailScreen;

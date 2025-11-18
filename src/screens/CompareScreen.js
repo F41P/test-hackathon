@@ -1,203 +1,329 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import DropDownPicker from 'react-native-dropdown-picker';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import DropDownPicker from "react-native-dropdown-picker";
+import axios from "axios";
 
-const plotItems = [
-  {label: 'ข้าวโพดหลังบ้าน', value: 'plot1'},
-  {label: 'ขิงแปลงใหญ่', value: 'plot2'},
-  {label: 'ข้าวหอมมะลิ', value: 'plot3'},
-];
+const API_URL = "http://localhost:3005/api/dashboard/plots";
 
-const chartData = {
-  plot1: { name: 'ข้าวโพดหลังบ้าน', income: 8000, expense: 6500, profit: 1500 },
-  plot2: { name: 'ขิงแปลงใหญ่', income: 10000, expense: 6000, profit: 4000 },
-};
+const CompareScreen = ({ navigation, route }) => {
+  const user_id = route.params?.user_id || 1;
 
-const CompareScreen = ({ navigation }) => {
-  const [plot1Open, setPlot1Open] = useState(false);
-  const [plot1Value, setPlot1Value] = useState(plotItems[0].value);
-  
-  const [plot2Open, setPlot2Open] = useState(false);
-  const [plot2Value, setPlot2Value] = useState(plotItems[1].value);
+  const [plotItems, setPlotItems] = useState([]);
+  const [plotData, setPlotData] = useState({});
+  const [plot1Value, setPlot1Value] = useState(null);
+  const [plot2Value, setPlot2Value] = useState(null);
 
-  const onPlot1Open = () => setPlot2Open(false);
-  const onPlot2Open = () => setPlot1Open(false);
+  const [open1, setOpen1] = useState(false);
+  const [open2, setOpen2] = useState(false);
 
-  const data1 = chartData[plot1Value] || chartData.plot1;
-  const data2 = chartData[plot2Value] || chartData.plot2;
+  const [loading, setLoading] = useState(true);
+
+  // โหลดข้อมูลครั้งแรก
+  useEffect(() => {
+    fetchPlotSummary();
+  }, []);
+
+  const fetchPlotSummary = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(API_URL, { params: { user_id } });
+
+      const items = res.data.map((p) => ({
+        label: p.plot_name,
+        value: p.plot_id,
+      }));
+
+      const map = {};
+      res.data.forEach((p) => {
+        map[p.plot_id] = {
+          name: p.plot_name,
+          income: Number(p.income_total),
+          expense: Number(p.expense_total),
+          profit: Number(p.profit),
+        };
+      });
+
+      setPlotItems(items);
+      setPlotData(map);
+
+      if (items.length >= 2) {
+        setPlot1Value(items[0].value);
+        setPlot2Value(items[1].value);
+      }
+    } catch (e) {
+      alert("โหลดข้อมูลไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fmt = (n) => Number(n).toLocaleString();
+
+  const data1 = plotData[plot1Value] || { income: 0, expense: 0, profit: 0 };
+  const data2 = plotData[plot2Value] || { income: 0, expense: 0, profit: 0 };
+
+  const chartHeight = 240;
+
+  const values = [
+    data1.income,
+    data1.expense,
+    data1.profit,
+    data2.income,
+    data2.expense,
+    data2.profit,
+  ];
+
+  const maxVal = Math.max(...values, 0);
+  const minVal = Math.min(...values, 0);
+  const diff = maxVal - minVal;
+  const scale = chartHeight / diff;
+
+  // ระดับ baseline
+  const baseY = (maxVal / diff) * chartHeight;
+
+  const renderBar = (value, color) => {
+    const height = Math.abs(value) * scale;
+    const isPositive = value >= 0;
+    const labelOffset = 16; // ระยะห่างให้เลขไม่ติดแท่ง
+
+    return (
+      <View style={styles.barWrap}>
+        {/* ตัวเลข */}
+        <Text
+          style={[
+            styles.barValue,
+            {
+              top: isPositive ? baseY - height - labelOffset : baseY + height,
+              color: value < 0 ? "#d9534f" : "#333",
+            },
+          ]}
+        >
+          {fmt(value)}
+        </Text>
+
+        {/* แท่งกราฟ */}
+        <View
+          style={[
+            styles.bar,
+            { backgroundColor: color },
+            isPositive
+              ? { height, top: baseY - height }
+              : { height, top: baseY },
+          ]}
+        />
+      </View>
+    );
+  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#84a58b" />
+          <Text>กำลังโหลดข้อมูล...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.innerContainer}
-        keyboardShouldPersistTaps="handled"
-        onScroll={() => {
-          setPlot1Open(false);
-          setPlot2Open(false);
-        }}
-      >
+      <ScrollView
+      nestedScrollEnabled={true}
+      scrollEnabled={!open1 && !open2} 
+      contentContainerStyle={{ padding: 20 }}
+      onScrollBeginDrag={() => {
+        setOpen1(false);
+        setOpen2(false);
+      }}
+    >
+        {/* Header ------------------------- */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>{"<"}</Text>
+            <Text style={styles.back}>{"<"}</Text>
           </TouchableOpacity>
-          <View>
-            <Text style={styles.title}>ข้อมูลเปรียบเทียบ</Text>
-            <Text style={styles.subtitle}>รายได้ ค่าใช้จ่าย กำไร ในแต่ละรอบการผลิต</Text>
+          <Text style={styles.title}>ข้อมูลเปรียบเทียบ</Text>
+        </View>
+
+        <Text style={styles.subtitle}>
+          รายได้ ค่าใช้จ่าย กำไร ในแต่ละรอบการผลิต
+        </Text>
+
+        {/* DROPDOWN ------------------------- */}
+        <View style={styles.row}>
+  
+  <View style={[styles.ddContainer, { zIndex: 3000 }]}>
+    <DropDownPicker
+      open={open1}
+      value={plot1Value}
+      setOpen={setOpen1}
+      setValue={setPlot1Value}
+      items={plotItems}
+      placeholder="เลือกแปลง"
+      style={styles.dd}
+      dropDownContainerStyle={styles.ddDrop}
+      onOpen={() => setOpen2(false)}
+      listMode="SCROLLVIEW"
+    />
+  </View>
+
+  <View style={[styles.ddContainer, { zIndex: 2000 }]}>
+    <DropDownPicker
+      open={open2}
+      value={plot2Value}
+      setOpen={setOpen2}
+      setValue={setPlot2Value}
+      items={plotItems}
+      placeholder="เลือกแปลง"
+      style={styles.dd}
+      dropDownContainerStyle={styles.ddDrop}
+      onOpen={() => setOpen1(false)}
+      listMode="SCROLLVIEW"
+    />
+  </View>
+
+</View>
+
+
+        {/* CHART ------------------------- */}
+        <View style={styles.chartBox}>
+          <View style={styles.chartArea}>
+            {/* baseline */}
+            <View style={[styles.baseline, { top: baseY }]} />
+
+            {/* ชุดแปลง 1 */}
+            <View style={styles.group}>
+              {renderBar(data1.income, "#64B5F6")}
+              {renderBar(data1.expense, "#E57373")}
+              {renderBar(data1.profit, "#81C784")}
+            </View>
+
+            {/* ชุดแปลง 2 */}
+            <View style={styles.group}>
+              {renderBar(data2.income, "#64B5F6")}
+              {renderBar(data2.expense, "#E57373")}
+              {renderBar(data2.profit, "#81C784")}
+            </View>
+          </View>
+
+          {/* Legend */}
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: "#64B5F6" }]} />
+            <Text>รายได้</Text>
+
+            <View style={[styles.legendDot, { backgroundColor: "#E57373" }]} />
+            <Text>ค่าใช้จ่าย</Text>
+
+            <View style={[styles.legendDot, { backgroundColor: "#81C784" }]} />
+            <Text>กำไร</Text>
           </View>
         </View>
 
-        <View style={styles.dropdownRow}>
-          <DropDownPicker
-            open={plot1Open}
-            value={plot1Value}
-            items={plotItems}
-            setOpen={setPlot1Open}
-            setValue={setPlot1Value}
-            onOpen={onPlot1Open}
-            style={styles.dropdown}
-            containerStyle={{...styles.dropdownContainer, zIndex: 2000}}
-          />
-          <DropDownPicker
-            open={plot2Open}
-            value={plot2Value}
-            items={plotItems}
-            setOpen={setPlot2Open}
-            setValue={setPlot2Value}
-            onOpen={onPlot2Open}
-            style={styles.dropdown}
-            containerStyle={{...styles.dropdownContainer, zIndex: 1000}}
-          />
-        </View>
-
-        <View style={styles.chartContainer}>
-          <View style={styles.barGroup}>
-            <View style={[styles.bar, styles.barIncome, {height: data1.income / 50}]} />
-            <View style={[styles.bar, styles.barExpense, {height: data1.expense / 50}]} />
-            <View style={[styles.bar, styles.barProfit, {height: data1.profit / 50}]} />
-          </View>
-
-          <View style={styles.barGroup}>
-            <View style={[styles.bar, styles.barIncome, {height: data2.income / 50}]} />
-            <View style={[styles.bar, styles.barExpense, {height: data2.expense / 50}]} />
-            <View style={[styles.bar, styles.barProfit, {height: data2.profit / 50}]} />
-          </View>
-        </View>
-        
-        <View style={styles.legend}>
-          <View style={[styles.legendDot, styles.barIncome]} />
-          <Text style={styles.legendText}>รายได้</Text>
-          <View style={[styles.legendDot, styles.barExpense]} />
-          <Text style={styles.legendText}>ค่าใช้จ่าย</Text>
-          <View style={[styles.legendDot, styles.barProfit]} />
-          <Text style={styles.legendText}>กำไร</Text>
-        </View>
-
+        {/* SUMMARY ------------------------- */}
         <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>ข้อสรุป และ คำแนะนำเบื้องต้น</Text>
+          <Text style={styles.summaryTitle}>ข้อสรุป และคำแนะนำเบื้องต้น</Text>
+
           <Text style={styles.summaryText}>
-            • {data2.name} สร้างกำไรได้ "ดีกว่า" {data1.name}
+            • {data1.name} ต้นทุน: {fmt(data1.expense)} บาท
           </Text>
+
           <Text style={styles.summaryText}>
-            • {data1.name} มีปัญหาเรื่องต้นทุนที่ "สูงเกินไป"
+            • {data2.name} {data2.profit < 0 ? "ขาดทุน" : "ทำกำไร"}:{" "}
+            {fmt(data2.profit)} บาท
           </Text>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
 };
 
+export default CompareScreen;
+
+// ================== STYLES ==================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
-  innerContainer: { flexGrow: 1, padding: 20, paddingBottom: 100 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: "#F4F7F2" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  back: { fontSize: 28, fontWeight: "bold", marginRight: 10 },
+  title: { fontSize: 24, fontWeight: "bold", color: "#84a58b" },
+  subtitle: { textAlign: "center", color: "grey", marginBottom: 20 },
+
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  ddContainer: { width: "48%", marginBottom: 20 },
+  dd: { backgroundColor: "#fff", borderColor: "#ddd" },
+  ddDrop: { borderColor: "#ddd" },
+
+  chartBox: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 20,
   },
-  backButton: { fontSize: 28, color: '#333', marginRight: 15, fontWeight: 'bold' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#84a58b' },
-  subtitle: { fontSize: 16, color: 'grey' },
-  dropdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 1000,
+  chartArea: {
+    height: 240,
+    position: "relative",
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
-  dropdownContainer: {
-    width: '48%',
-    marginBottom: 10,
+
+  baseline: {
+    position: "absolute",
+    width: "100%",
+    height: 2,
+    backgroundColor: "#bbb",
   },
-  dropdown: {
-    backgroundColor: '#f5f5f5',
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
-  },
-  chartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 250, 
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 10,
-    marginTop: 20,
-  },
-  barGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: '100%',
-    position: 'relative',
-    paddingHorizontal: 10,
-  },
-  barLabel: {
-    position: 'absolute',
-    top: -20,
-    width: 150,
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+
+  group: { flexDirection: "row", gap: 10 },
+  barWrap: { width: 40, alignItems: "center" },
+
   bar: {
-    width: 25,
-    marginHorizontal: 5,
-    borderRadius: 4,
+    width: 28,
+    position: "absolute",
+    borderRadius: 6,
   },
-  barIncome: { backgroundColor: '#64b5f6' },
-  barExpense: { backgroundColor: '#e57373' }, 
-  barProfit: { backgroundColor: '#81c784' },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
+
+  barValue: (isPositive, v) => ({
+    fontSize: 13,
+    fontWeight: "600",
+    color: v < 0 ? "red" : "#333",
+    marginBottom: 3,
+  }),
+
+  legendRow: {
+    marginTop: 15,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 20,
+    alignItems: "center",
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 5,
-    marginLeft: 15,
-  },
-  legendText: {
+  legendDot: { width: 12, height: 12, borderRadius: 6 },
+
+  summaryBox: { backgroundColor: "#fff", padding: 15, borderRadius: 12 },
+  summaryTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  summaryText: { fontSize: 15, marginBottom: 6 },
+
+  barNumber: {
+    position: "absolute",
     fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    width: 50,
+    alignSelf: "center",
+    opacity: 0.9,
   },
-  summaryBox: {
-    backgroundColor: '#F4F7F2',
-    borderRadius: 12,
-    padding: 15,
-    marginTop: 20,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  summaryText: {
+  barValue: {
+    position: "absolute",
     fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
+    fontWeight: "600",
+    textAlign: "center",
+    width: 50,
   },
 });
-
-export default CompareScreen;
