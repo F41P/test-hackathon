@@ -179,62 +179,6 @@ const AnalyticsCard = ({ reloadSignal }) => {
     );
   };
 
-  const renderChartContent = (data, type) => {
-    let unit = '%'; 
-    
-    let dataForLegend = data; 
-    let dataForPie = data;     
-
-    if (type === 'profit') {
-      unit = ' บาท';
-      dataForPie = data.filter(item => parseFloat(item.amount) > 0); 
-    }
-
-    const seriesData = dataForPie.map((item, index) => ({
-      value: Math.abs(parseFloat(item.amount)),
-      color: BAR_COLORS[index % BAR_COLORS.length]
-    }));
-
-    return (
-      <>
-        <View style={styles.chartDisplayContainer}>
-          {dataForPie.length > 0 && seriesData.some(s => s.value > 0) ? ( 
-            <PieChart
-              widthAndHeight={140}
-              series={seriesData}    
-              coverRadius={0.65} 
-              coverFill={'#FFF'} 
-            />
-          ) : (
-            <View style={styles.chartPlaceholder} /> 
-          )}
-        </View>
-        
-        <View style={styles.legendContainer}>
-          {dataForLegend.length > 0 ? (
-            dataForLegend.map((item, index) => (
-              <View key={index} style={styles.legendItem}>
-                <View style={[styles.legendDot, { 
-                    backgroundColor: (item.amount < 0) ? '#e57373' : BAR_COLORS[index % BAR_COLORS.length] 
-                }]} />
-                
-                <Text style={styles.legendText}>
-                  {item.name} {
-                    (type === 'profit') 
-                      ? `${item.amount.toLocaleString()}${unit}`
-                      : `${item.percentage}${unit}`
-                  }
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.placeholderText}>ไม่มีข้อมูล</Text>
-          )}
-        </View>
-      </>
-    );
-  };
-
   return (
     <View style={styles.card}>
       <View style={styles.tabContainer}>
