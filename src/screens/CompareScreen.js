@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Image,
+  Image, // ⭐ 1. เพิ่ม Image component
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -81,8 +81,9 @@ const CompareScreen = ({ navigation, route }) => {
 
   const fmt = (n) => Number(n).toLocaleString();
 
-  const data1 = plotData[plot1Value] || { income: 0, expense: 0, profit: 0 };
-  const data2 = plotData[plot2Value] || { income: 0, expense: 0, profit: 0 };
+  // ⭐ แก้ไข: กำหนดชื่อ Default สำหรับ Logic คำแนะนำ
+  const data1 = plotData[plot1Value] || { income: 0, expense: 0, profit: 0, name: "แปลง 1" };
+  const data2 = plotData[plot2Value] || { income: 0, expense: 0, profit: 0, name: "แปลง 2" };
 
   const chartHeight = 240;
 
@@ -149,6 +150,66 @@ const CompareScreen = ({ navigation, route }) => {
     );
   }
 
+  const adviceLines = [];
+
+  // 1. เปรียบเทียบกำไรสูงสุด
+  if (data1.profit > data2.profit) {
+    const diff = data1.profit - data2.profit;
+    const percent = ((diff / data2.profit) * 100).toFixed(0);
+    adviceLines.push(`• ${data1.name} ทำกำไรได้มากกว่า ${fmt(diff)} บาท (สูงกว่า ${percent}%)`);
+  } else if (data2.profit > data1.profit) {
+    const diff = data2.profit - data1.profit;
+    const percent = ((diff / data1.profit) * 100).toFixed(0);
+    adviceLines.push(`• ${data2.name} ทำกำไรได้มากกว่า ${fmt(diff)} บาท (สูงกว่า ${percent}%)`);
+  } else {
+    adviceLines.push(`• ทั้งสองแปลงทำกำไรใกล้เคียงกัน`);
+  }
+
+  // 2. วิเคราะห์ประสิทธิภาพ (Profit Margin)
+  const margin1 = data1.income > 0 ? (data1.profit / data1.income) : 0;
+  const margin2 = data2.income > 0 ? (data2.profit / data2.income) : 0;
+
+  if (margin1 > 0 && margin2 > 0) {
+    const higherMarginPlot = margin1 >= margin2 ? data1.name : data2.name;
+    const lowerMarginPlot = margin1 < margin2 ? data1.name : data2.name;
+    const higherMarginValue = Math.max(margin1, margin2);
+    const lowerMarginValue = Math.min(margin1, margin2);
+    
+    if (Math.abs(margin1 - margin2) > 0.05) {
+      adviceLines.push(`• ${higherMarginPlot} มีประสิทธิภาพดีกว่า กำไร ${Math.round(higherMarginValue * 100)}% ของรายได้`);
+      adviceLines.push(`  → ${lowerMarginPlot} ควรลดต้นทุน เพื่อเพิ่มกำไร`);
+    }
+  }
+
+  // 3. วิเคราะห์ค่าใช้จ่ายที่สูงผิดปกติ
+  const expenseRatio = data1.expense > 0 && data2.expense > 0 ? 
+    Math.max(data1.expense, data2.expense) / Math.min(data1.expense, data2.expense) : 0;
+
+  if (expenseRatio > 1.5) {
+    const higherExpensePlot = data1.expense > data2.expense ? data1.name : data2.name;
+    const higherExpense = Math.max(data1.expense, data2.expense);
+    const lowerExpense = Math.min(data1.expense, data2.expense);
+    const diff = higherExpense - lowerExpense;
+    
+    adviceLines.push(`• ⚠️ ${higherExpensePlot} มีค่าใช้จ่ายสูงกว่า ${fmt(diff)} บาท`);
+    adviceLines.push(`  → แนะนำตรวจสอบรายการค่าใช้จ่ายเพื่อหาจุดประหยัด`);
+  }
+
+  // 4. คำแนะนำเชิงบวก - ชมจุดแข็ง
+  const bestPlot = data1.profit >= data2.profit ? data1.name : data2.name;
+  const bestMargin = Math.max(margin1, margin2);
+
+  if (bestMargin > 0.3) {
+    adviceLines.push(`• 👍 ${bestPlot} บริหารจัดการได้ดีมาก กำไรสูงถึง ${Math.round(bestMargin * 100)}%`);
+  } else if (bestMargin > 0.15) {
+    adviceLines.push(`• ✓ ${bestPlot} มีผลประกอบการที่ดี`);
+  }
+
+  // 5. ข้อมูลไม่เพียงพอ
+  if (adviceLines.length === 0) {
+    adviceLines.push("• กรุณาเพิ่มข้อมูลรายได้และค่าใช้จ่ายเพื่อดูคำแนะนำ");
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -163,9 +224,10 @@ const CompareScreen = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
+            {/* 💡 เปลี่ยนเป็น Image สำหรับปุ่มย้อนกลับ */}
             <Image 
               source={require('../assets/images/back_icon.png')} 
-              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+              style={styles.backIcon} // ใช้ style ที่กำหนดไว้ใน styles
             />
           </TouchableOpacity>
           <Text style={styles.title}>ข้อมูลเปรียบเทียบ</Text>
@@ -242,18 +304,15 @@ const CompareScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* SUMMARY */}
+        {/* SUMMARY (ใช้ Logic ใหม่) */}
         <View style={styles.summaryBox}>
           <Text style={styles.summaryTitle}>ข้อสรุป และคำแนะนำเบื้องต้น</Text>
 
-          <Text style={styles.summaryText}>
-            • {data1.name || "แปลง 1"} ต้นทุน: {fmt(data1.expense)} บาท
-          </Text>
-
-          <Text style={styles.summaryText}>
-            • {data2.name || "แปลง 2"} {data2.profit < 0 ? "ขาดทุน" : "ทำกำไร"}:{" "}
-            {fmt(data2.profit)} บาท
-          </Text>
+          {adviceLines.map((line, index) => (
+            <Text key={index} style={styles.summaryText}>
+              {line}
+            </Text>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -268,7 +327,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  back: { fontSize: 28, fontWeight: "bold", marginRight: 10 },
+  // 💡 แก้ไข: ลบ 'back' เดิมและเพิ่ม 'backIcon'
+  backIcon: { 
+    width: 28, 
+    height: 28, 
+    tintColor: '#333', 
+    marginRight: 10,
+  },
   title: { fontSize: 24, fontWeight: "bold", color: "#84a58b" },
   subtitle: { textAlign: "center", color: "grey", marginBottom: 20 },
 
