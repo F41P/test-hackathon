@@ -1,10 +1,3 @@
-// import api from '../api/axios';
-
-// export const getPlots = (user_id) =>
-//   api.get('/api/plots', { params: { user_id } }).then((res) => res.data);
-
-// export const createPlot = (payload) =>
-//   api.post('/api/plots', payload).then((res) => res.data);
 import axios from "axios";
 
 const API_URL = "http://localhost:3005/api";

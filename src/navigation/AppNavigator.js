@@ -22,7 +22,6 @@ const AppNavigator = () => {
     <Stack.Navigator>
       {!isLoggedIn ? (
         <>
-          {/* กลุ่มหน้า Auth (ซ่อน Header) */}
           <Stack.Screen
             name="Login"
             component={LoginScreen}
@@ -36,7 +35,6 @@ const AppNavigator = () => {
         </>
       ) : (
         <>
-          {/* กลุ่มหน้า Main (หลังจาก Login) */}
           <Stack.Screen
             name="Home"
             component={HomeScreen}
@@ -52,7 +50,11 @@ const AppNavigator = () => {
             component={AddPlotScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="AddYield" component={AddYieldScreen} />
+          <Stack.Screen
+            name="AddYield"
+            component={AddYieldScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="AddTransaction"
             component={AddTransactionScreen}

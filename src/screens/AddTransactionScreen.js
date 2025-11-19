@@ -24,8 +24,6 @@ const API_URL =
     ? "http://10.0.2.2:3005/api"
     : "http://localhost:3005/api";
 
-
-
 const AddTransactionScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { plots } = usePlots();
@@ -36,7 +34,10 @@ const AddTransactionScreen = ({ navigation }) => {
   const [date, setDate] = useState(new Date());
 
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [allCategories, setAllCategories] = useState({ expense: [], income: [] });
+  const [allCategories, setAllCategories] = useState({
+    expense: [],
+    income: [],
+  });
 
   // Dropdown — Category
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -55,27 +56,30 @@ const AddTransactionScreen = ({ navigation }) => {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   const formatDate = (d) =>
-    d.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
+    d.toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
         setLoadingCategories(true);
         const res = await axios.get(`${API_URL}/transactions/categories`);
-        
+
         // สมมติ: type_id 1=expense, 2=income (ปรับตาม DB จริงของคุณ)
         const expenses = res.data
-          .filter(c => c.type_id === 1) // เช็ค DB ว่าใช้เลขนี้จริงไหม
-          .map(c => ({ label: c.name, value: c.id }));
-        
+          .filter((c) => c.type_id === 1) // เช็ค DB ว่าใช้เลขนี้จริงไหม
+          .map((c) => ({ label: c.name, value: c.id }));
+
         const incomes = res.data
-          .filter(c => c.type_id === 2)
-          .map(c => ({ label: c.name, value: c.id }));
+          .filter((c) => c.type_id === 2)
+          .map((c) => ({ label: c.name, value: c.id }));
 
         setAllCategories({ expense: expenses, income: incomes });
         setCategoryItems(expenses);
         if (expenses.length > 0) setCategoryValue(expenses[0].value);
-
       } catch (err) {
         console.log("Load categories error:", err);
       } finally {
@@ -93,11 +97,14 @@ const AddTransactionScreen = ({ navigation }) => {
         return;
       }
       if (!categoryValue) {
-         Alert.alert("ผิดพลาด", "กรุณาเลือกหมวดหมู่");
+        Alert.alert("ผิดพลาด", "กรุณาเลือกหมวดหมู่");
         return;
       }
 
-      const finalAmount = activeTab === "expense" ? -Math.abs(numericAmount) : Math.abs(numericAmount);
+      const finalAmount =
+        activeTab === "expense"
+          ? -Math.abs(numericAmount)
+          : Math.abs(numericAmount);
 
       const payload = {
         user_id: user?.user_id,
@@ -117,29 +124,29 @@ const AddTransactionScreen = ({ navigation }) => {
     }
   };
   const loadPlotItems = async () => {
-      try {
-        const API_URL =
-          Platform.OS === "android"
-            ? "http://10.0.2.2:3005/api"
-            : "http://localhost:3005/api";
+    try {
+      const API_URL =
+        Platform.OS === "android"
+          ? "http://10.0.2.2:3005/api"
+          : "http://localhost:3005/api";
 
-        const res = await axios.get(
-          `${API_URL}/dashboard/plots?user_id=${user.user_id}`
-        );
+      const res = await axios.get(
+        `${API_URL}/dashboard/plots?user_id=${user.user_id}`
+      );
 
-        const list = [
-          { label: "ไม่ระบุ", value: null },
-          ...res.data.map((p) => ({
-            label: p.plot_name,
-            value: p.plot_id,
-          })),
-        ];
+      const list = [
+        { label: "ไม่ระบุ", value: null },
+        ...res.data.map((p) => ({
+          label: p.plot_name,
+          value: p.plot_id,
+        })),
+      ];
 
-        setPlotItems(list);
-      } catch (err) {
-        console.log("Load plot items error:", err);
-      }
-    };
+      setPlotItems(list);
+    } catch (err) {
+      console.log("Load plot items error:", err);
+    }
+  };
 
   useEffect(() => {
     if (user?.user_id) {
@@ -147,19 +154,23 @@ const AddTransactionScreen = ({ navigation }) => {
     }
   }, [user]);
 
-
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.innerContainer}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled={true}
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Image 
-              source={require('../assets/images/back_icon.png')} 
-              style={{ width: 40, height: 40, tintColor: '#333', marginRight: 15 }} 
+            <Image
+              source={require("../assets/images/back_icon.png")}
+              style={{
+                width: 40,
+                height: 40,
+                tintColor: "#333",
+                marginRight: 15,
+              }}
             />
           </TouchableOpacity>
 
@@ -172,25 +183,43 @@ const AddTransactionScreen = ({ navigation }) => {
         {/* TABS */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "expense" && styles.tabActive]}
+            style={[
+              styles.tabButton,
+              activeTab === "expense" && styles.tabActive,
+            ]}
             onPress={() => {
               setActiveTab("expense");
               setCategoryItems(allCategories.expense);
               setCategoryValue(allCategories.expense[0]?.value || null);
             }}
           >
-            <Text style={activeTab === "expense" ? styles.tabActiveText : styles.tabText}>ค่าใช้จ่าย</Text>
+            <Text
+              style={
+                activeTab === "expense" ? styles.tabActiveText : styles.tabText
+              }
+            >
+              ค่าใช้จ่าย
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "income" && styles.tabActive]}
+            style={[
+              styles.tabButton,
+              activeTab === "income" && styles.tabActive,
+            ]}
             onPress={() => {
               setActiveTab("income");
               setCategoryItems(allCategories.income);
               setCategoryValue(allCategories.income[0]?.value || null);
             }}
           >
-            <Text style={activeTab === "income" ? styles.tabActiveText : styles.tabText}>รายได้</Text>
+            <Text
+              style={
+                activeTab === "income" ? styles.tabActiveText : styles.tabText
+              }
+            >
+              รายได้
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -206,18 +235,21 @@ const AddTransactionScreen = ({ navigation }) => {
           />
 
           <Text style={styles.inputLabel}>วันที่ทำรายการ</Text>
-          <TouchableOpacity style={styles.dateInput} onPress={() => setDatePickerVisibility(true)}>
+          <TouchableOpacity
+            style={styles.dateInput}
+            onPress={() => setDatePickerVisibility(true)}
+          >
             <Text style={styles.dateText}>{formatDate(date)}</Text>
-            <Image 
-              source={require('../assets/images/calendar_icon.png')} 
-              style={{ width: 40, height: 40 }} 
+            <Image
+              source={require("../assets/images/calendar_icon.png")}
+              style={{ width: 40, height: 40 }}
             />
           </TouchableOpacity>
 
           {/* CATEGORY */}
           <Text style={styles.inputLabel}>หมวดหมู่</Text>
           {loadingCategories ? (
-            <ActivityIndicator style={{height: 55}} />
+            <ActivityIndicator style={{ height: 55 }} />
           ) : (
             <DropDownPicker
               open={categoryOpen}
@@ -229,7 +261,10 @@ const AddTransactionScreen = ({ navigation }) => {
               listMode="SCROLLVIEW"
               style={styles.dropdown}
               containerStyle={styles.dropdownContainer}
-              onOpen={() => { setPlotOpen(false); setCategoryOpen(true); }}
+              onOpen={() => {
+                setPlotOpen(false);
+                setCategoryOpen(true);
+              }}
               zIndex={3000}
               placeholder="เลือกหมวดหมู่"
             />
@@ -247,7 +282,10 @@ const AddTransactionScreen = ({ navigation }) => {
             listMode="SCROLLVIEW"
             style={styles.dropdown}
             containerStyle={styles.dropdownContainer}
-            onOpen={() => { setCategoryOpen(false); setPlotOpen(true); }}
+            onOpen={() => {
+              setCategoryOpen(false);
+              setPlotOpen(true);
+            }}
             zIndex={2000}
             placeholder="เลือกแปลง (ไม่บังคับ)"
           />
@@ -270,36 +308,89 @@ const AddTransactionScreen = ({ navigation }) => {
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         mode="date"
-        onConfirm={(d) => { setDate(d); setDatePickerVisibility(false); }}
+        onConfirm={(d) => {
+          setDate(d);
+          setDatePickerVisibility(false);
+        }}
         onCancel={() => setDatePickerVisibility(false)}
       />
     </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
   innerContainer: { flexGrow: 1, padding: 20, paddingBottom: 100 },
   header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  backButton: { fontSize: 28, color: "#333", marginRight: 15, fontWeight: "bold" },
+  backButton: {
+    fontSize: 28,
+    color: "#333",
+    marginRight: 15,
+    fontWeight: "bold",
+  },
   title: { fontSize: 24, fontWeight: "bold", color: "#84a58b" },
   subtitle: { fontSize: 16, color: "grey" },
-  tabContainer: { flexDirection: "row", width: "100%", borderRadius: 12, backgroundColor: "#f0f0f0", padding: 5, marginBottom: 20 },
-  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center", backgroundColor: "white", borderWidth: 1, borderColor: "#f0f0f0" },
+  tabContainer: {
+    flexDirection: "row",
+    width: "100%",
+    borderRadius: 12,
+    backgroundColor: "#f0f0f0",
+    padding: 5,
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
   tabActive: { backgroundColor: "#84a58b", borderColor: "#84a58b" },
   tabActiveText: { color: "white", fontWeight: "bold" },
   tabText: { color: "grey", fontWeight: "bold" },
   form: { width: "100%" },
   inputLabel: { marginTop: 10, marginBottom: 5, color: "grey", fontSize: 14 },
-  input: { borderWidth: 1, borderColor: "#e0e0e0", backgroundColor: "#f5f5f5", borderRadius: 12, paddingHorizontal: 15, height: 55, fontSize: 16, marginBottom: 10 },
-  dateInput: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", backgroundColor: "#f5f5f5", borderRadius: 12, paddingHorizontal: 15, height: 55, marginBottom: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 55,
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  dateInput: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 55,
+    marginBottom: 10,
+  },
   dateText: { fontSize: 16 },
-  dropdown: { borderWidth: 1, borderColor: "#e0e0e0", backgroundColor: "#f5f5f5", borderRadius: 12 },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+  },
   dropdownContainer: { marginBottom: 10 },
-  button: { backgroundColor: "#84a58b", padding: 15, borderRadius: 12, width: "100%", alignItems: "center", marginTop: 30 },
+  button: {
+    backgroundColor: "#84a58b",
+    padding: 15,
+    borderRadius: 12,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 30,
+  },
   buttonText: { color: "white", fontSize: 16, fontWeight: "bold" },
 });
-
 
 export default AddTransactionScreen;

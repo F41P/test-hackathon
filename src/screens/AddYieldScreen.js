@@ -5,48 +5,62 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView,
+  Image,
+  Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import axios from "axios";
 
-const API_URL = "http://localhost:3005/api";
+const API_URL = "http://localhost:3005/api/yield/add";
 
-export default function AddYieldScreen({ navigation, route }) {
-  const { plotId } = route.params;
+const AddYield = ({ navigation, route }) => {
+  const plotId = route.params?.plotId;
+
   const [year, setYear] = useState("");
-  const [yieldKg, setYieldKg] = useState("");
+  const [amount, setAmount] = useState("");
 
   const handleSubmit = async () => {
-    if (!year || !yieldKg) {
+    if (!year || !amount) {
       Alert.alert("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/yield-history`, {
+      await axios.post(API_URL, {
         plot_id: plotId,
-        year: Number(year),
-        yield_kg: Number(yieldKg),
+        year,
+        amount: Number(amount),
       });
 
-      Alert.alert("สำเร็จ", "บันทึกผลผลิตเรียบร้อยแล้ว");
+      Alert.alert("เพิ่มผลผลิตสำเร็จ");
       navigation.goBack();
     } catch (err) {
-      console.log(err);
-      Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถบันทึกได้");
+      console.log("AddYield error:", err);
+      Alert.alert("เกิดข้อผิดพลาด");
     }
   };
 
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Image
+              source={require("../assets/images/back_icon.png")}
+              style={styles.backIcon}
+            />
+          </TouchableOpacity>
 
-        {/* หัวข้อ */}
-        <Text style={styles.title}>เพิ่มผลผลิตย้อนหลัง</Text>
+          <Text style={styles.title}>เพิ่มผลผลิตย้อนหลัง</Text>
 
-        {/* ฟอร์ม */}
-        <View style={styles.card}>
+          <View style={{ width: 40 }} /> 
+        </View>
+
+        {/* FORM CARD */}
+        <View style={styles.formCard}>
           <Text style={styles.label}>ปี</Text>
           <TextInput
             style={styles.input}
@@ -59,75 +73,88 @@ export default function AddYieldScreen({ navigation, route }) {
           <Text style={styles.label}>ผลผลิต (กก.)</Text>
           <TextInput
             style={styles.input}
-            placeholder="เช่น 3000"
+            placeholder="เช่น 1500"
             keyboardType="numeric"
-            value={yieldKg}
-            onChangeText={setYieldKg}
+            value={amount}
+            onChangeText={setAmount}
           />
-
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>บันทึกผลผลิต</Text>
-          </TouchableOpacity>
         </View>
 
+        {/* BUTTON */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitText}>บันทึก</Text>
+        </TouchableOpacity>
+
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-}
+};
+
+export default AddYield;
+
+// ---------------- STYLE ----------------
 
 const styles = StyleSheet.create({
-  screen: {
+  container: {
     flex: 1,
     backgroundColor: "#F4F7F2",
   },
-  scrollContent: {
-    padding: 20,
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
   },
 
-  // Title เหมือนหน้าอื่น
+  backIcon: {
+    width: 32,
+    height: 32,
+    tintColor: "#333",
+    marginRight: 10,
+  },
+
   title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#84a58b",
-    marginBottom: 15,
-    alignSelf: "center",
+    flex: 1,
+    textAlign: "center",
+    marginRight: 40, 
   },
 
-  // การ์ดพื้นหลังเหมือนหน้าฟอร์มอื่นของคุณ
-  card: {
+  formCard: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 12,
-    elevation: 2,
+    marginBottom: 20,
   },
 
   label: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: "#555",
+    marginBottom: 6,
   },
 
   input: {
-    backgroundColor: "#f8f8f8",
-    borderWidth: 1,
-    borderColor: "#ddd",
+    backgroundColor: "#f7f7f7",
     borderRadius: 10,
-    padding: 12,
-    marginBottom: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 16,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#e6e6e6",
   },
 
-  button: {
+  submitButton: {
     backgroundColor: "#84a58b",
-    paddingVertical: 15,
+    padding: 14,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 10,
   },
-  buttonText: {
+
+  submitText: {
     color: "white",
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

@@ -32,16 +32,14 @@ const AddPlotScreen = ({ navigation }) => {
 
   const [open, setOpen] = useState(false);
 
-  // 📌 วันที่ปลูก - วันที่เก็บเกี่ยว
+  //  วันที่ปลูก - วันที่เก็บเกี่ยว
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(null);
 
   const [isStartPickerVisible, setStartPickerVisible] = useState(false);
   const [isEndPickerVisible, setEndPickerVisible] = useState(false);
 
-  // -----------------------------
-  // Load Plants
-  // -----------------------------
+
   useEffect(() => {
     loadPlants();
   }, []);
@@ -73,21 +71,19 @@ const AddPlotScreen = ({ navigation }) => {
     });
   };
 
-  // -----------------------------
-  // Save Plot
-  // -----------------------------
+
   const handleSavePlot = async () => {
   try {
     let finalPlantId = plantId;
 
-    // ถ้าเลือก "+ เพิ่มพืชใหม่"
+
     if (plantId === 0 && newPlantName.trim() !== "") {
       const newPlant = await axios.post(`${API_URL}/api/plants`, {
         user_id: user.user_id,
         plant_name: newPlantName.trim(),
       });
 
-      finalPlantId = newPlant.data.plant_id; // ได้ plant_id ใหม่
+      finalPlantId = newPlant.data.plant_id; 
     }
 
     const payload = {
@@ -109,7 +105,7 @@ const AddPlotScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Header */}
+
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Image 
@@ -123,7 +119,7 @@ const AddPlotScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Form */}
+
         <View style={styles.form}>
           <Text style={styles.inputLabel}>เลือกพืชที่ปลูก</Text>
 
@@ -139,7 +135,7 @@ const AddPlotScreen = ({ navigation }) => {
             dropDownContainerStyle={styles.dropdownContainer}
           />
 
-          {/* ถ้าเลือก + เพิ่มพืชใหม่ */}
+
           {plantId === 0 && (
             <>
               <Text style={styles.inputLabel}>ชื่อพืชใหม่</Text>
@@ -169,7 +165,7 @@ const AddPlotScreen = ({ navigation }) => {
             onChangeText={setAreaSize}
           />
 
-          {/* วันที่ปลูก */}
+
           <Text style={styles.inputLabel}>วันที่ปลูก</Text>
           <TouchableOpacity
             style={styles.dateInput}
@@ -182,7 +178,7 @@ const AddPlotScreen = ({ navigation }) => {
             />
           </TouchableOpacity>
 
-          {/* วันที่เก็บเกี่ยว */}
+
           <Text style={styles.inputLabel}>วันที่เก็บเกี่ยว</Text>
           <TouchableOpacity
             style={styles.dateInput}
@@ -197,7 +193,7 @@ const AddPlotScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Date Pickers */}
+
       <DateTimePickerModal
         isVisible={isStartPickerVisible}
         mode="date"
