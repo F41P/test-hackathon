@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import axios from "axios";
 
-const API_URL = "http://localhost:3005/api/yield/add";
+const API_URL = "http://localhost:3005/api/yield-history";
 
 const AddYield = ({ navigation, route }) => {
   const plotId = route.params?.plotId;
@@ -30,21 +30,20 @@ const AddYield = ({ navigation, route }) => {
       await axios.post(API_URL, {
         plot_id: plotId,
         year,
-        amount: Number(amount),
+        yield_kg: Number(amount), 
       });
 
       Alert.alert("เพิ่มผลผลิตสำเร็จ");
       navigation.goBack();
     } catch (err) {
-      console.log("AddYield error:", err);
-      Alert.alert("เกิดข้อผิดพลาด");
-    }
+  console.log("AddYield error:", err.response?.data || err.message);
+  Alert.alert("เกิดข้อผิดพลาด", err.response?.data?.message || "ไม่สามารถบันทึกข้อมูลได้");
+}
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        
         {/* HEADER */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -56,7 +55,7 @@ const AddYield = ({ navigation, route }) => {
 
           <Text style={styles.title}>เพิ่มผลผลิตย้อนหลัง</Text>
 
-          <View style={{ width: 40 }} /> 
+          <View style={{ width: 40 }} />
         </View>
 
         {/* FORM CARD */}
@@ -84,7 +83,6 @@ const AddYield = ({ navigation, route }) => {
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitText}>บันทึก</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -119,7 +117,7 @@ const styles = StyleSheet.create({
     color: "#84a58b",
     flex: 1,
     textAlign: "center",
-    marginRight: 40, 
+    marginRight: 40,
   },
 
   formCard: {
