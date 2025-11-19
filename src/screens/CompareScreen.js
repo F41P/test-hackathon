@@ -6,23 +6,23 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Image, // ⭐ 1. เพิ่ม Image component
+  Image, 
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DropDownPicker from "react-native-dropdown-picker";
 import axios from "axios";
 
-// 1. นำเข้า AuthContext
-import { useAuth } from "../context/AuthContext"; 
+
+import { useAuth } from "../context/AuthContext";
 
 const API_URL = "http://localhost:3005/api/dashboard/plots";
 
 const CompareScreen = ({ navigation, route }) => {
   // 2. ดึงข้อมูล user ที่ login อยู่จาก Context
   const { user } = useAuth();
-  
+
   // ใช้ user_id ของคนที่ login อยู่
-  const user_id = user?.user_id; 
+  const user_id = user?.user_id;
 
   const [plotItems, setPlotItems] = useState([]);
   const [plotData, setPlotData] = useState({});
@@ -82,8 +82,18 @@ const CompareScreen = ({ navigation, route }) => {
   const fmt = (n) => Number(n).toLocaleString();
 
   // ⭐ แก้ไข: กำหนดชื่อ Default สำหรับ Logic คำแนะนำ
-  const data1 = plotData[plot1Value] || { income: 0, expense: 0, profit: 0, name: "แปลง 1" };
-  const data2 = plotData[plot2Value] || { income: 0, expense: 0, profit: 0, name: "แปลง 2" };
+  const data1 = plotData[plot1Value] || {
+    income: 0,
+    expense: 0,
+    profit: 0,
+    name: "แปลง 1",
+  };
+  const data2 = plotData[plot2Value] || {
+    income: 0,
+    expense: 0,
+    profit: 0,
+    name: "แปลง 2",
+  };
 
   const chartHeight = 240;
 
@@ -99,7 +109,7 @@ const CompareScreen = ({ navigation, route }) => {
   const maxVal = Math.max(...values, 0);
   const minVal = Math.min(...values, 0);
   const diff = maxVal - minVal;
-  
+
   // ป้องกันการหารด้วย 0 กรณีข้อมูลเป็น 0 ทั้งหมด
   const scale = diff === 0 ? 1 : chartHeight / diff;
 
@@ -109,7 +119,7 @@ const CompareScreen = ({ navigation, route }) => {
   const renderBar = (value, color) => {
     const height = Math.abs(value) * scale;
     const isPositive = value >= 0;
-    const labelOffset = 16; 
+    const labelOffset = 16;
 
     return (
       <View style={styles.barWrap}>
@@ -152,60 +162,103 @@ const CompareScreen = ({ navigation, route }) => {
 
   const adviceLines = [];
 
-  // 1. เปรียบเทียบกำไรสูงสุด
+  // ------------------------------
+  // 1) กำไรสูงสุด
+  // ------------------------------
+  let bestProfitPlot, bestProfitValue, profitDiff, profitPercent;
+
   if (data1.profit > data2.profit) {
-    const diff = data1.profit - data2.profit;
-    const percent = ((diff / data2.profit) * 100).toFixed(0);
-    adviceLines.push(`• ${data1.name} ทำกำไรได้มากกว่า ${fmt(diff)} บาท (สูงกว่า ${percent}%)`);
+    bestProfitPlot = data1.name;
+    bestProfitValue = data1.profit;
+    profitDiff = data1.profit - data2.profit;
+    profitPercent =
+      data2.profit > 0 ? ((profitDiff / data2.profit) * 100).toFixed(0) : 0;
+
+    adviceLines.push(
+      `• ${data1.name} ทำกำไรได้มากกว่า ${fmt(
+        profitDiff
+      )} บาท (สูงกว่า ${profitPercent}%)`
+    );
   } else if (data2.profit > data1.profit) {
-    const diff = data2.profit - data1.profit;
-    const percent = ((diff / data1.profit) * 100).toFixed(0);
-    adviceLines.push(`• ${data2.name} ทำกำไรได้มากกว่า ${fmt(diff)} บาท (สูงกว่า ${percent}%)`);
+    bestProfitPlot = data2.name;
+    bestProfitValue = data2.profit;
+    profitDiff = data2.profit - data1.profit;
+    profitPercent =
+      data1.profit > 0 ? ((profitDiff / data1.profit) * 100).toFixed(0) : 0;
+
+    adviceLines.push(
+      `• ${data2.name} ทำกำไรได้มากกว่า ${fmt(
+        profitDiff
+      )} บาท (สูงกว่า ${profitPercent}%)`
+    );
   } else {
+    bestProfitPlot = null;
     adviceLines.push(`• ทั้งสองแปลงทำกำไรใกล้เคียงกัน`);
   }
 
-  // 2. วิเคราะห์ประสิทธิภาพ (Profit Margin)
-  const margin1 = data1.income > 0 ? (data1.profit / data1.income) : 0;
-  const margin2 = data2.income > 0 ? (data2.profit / data2.income) : 0;
+  // ------------------------------
+  // 2) ประสิทธิภาพ (Profit Margin)
+  // ------------------------------
+  const margin1 = data1.income > 0 ? data1.profit / data1.income : 0;
+  const margin2 = data2.income > 0 ? data2.profit / data2.income : 0;
 
-  if (margin1 > 0 && margin2 > 0) {
-    const higherMarginPlot = margin1 >= margin2 ? data1.name : data2.name;
-    const lowerMarginPlot = margin1 < margin2 ? data1.name : data2.name;
-    const higherMarginValue = Math.max(margin1, margin2);
-    const lowerMarginValue = Math.min(margin1, margin2);
-    
-    if (Math.abs(margin1 - margin2) > 0.05) {
-      adviceLines.push(`• ${higherMarginPlot} มีประสิทธิภาพดีกว่า กำไร ${Math.round(higherMarginValue * 100)}% ของรายได้`);
-      adviceLines.push(`  → ${lowerMarginPlot} ควรลดต้นทุน เพื่อเพิ่มกำไร`);
+  let bestMarginPlot, bestMarginValue, worseMarginPlot;
+
+  if (margin1 > margin2) {
+    bestMarginPlot = data1.name;
+    bestMarginValue = margin1;
+    worseMarginPlot = data2.name;
+  } else if (margin2 > margin1) {
+    bestMarginPlot = data2.name;
+    bestMarginValue = margin2;
+    worseMarginPlot = data1.name;
+  }
+
+  if (Math.abs(margin1 - margin2) > 0.05) {
+    adviceLines.push(
+      `• ${bestMarginPlot} มีประสิทธิภาพดีกว่า กำไร ${Math.round(
+        bestMarginValue * 100
+      )}% ของรายได้`
+    );
+    adviceLines.push(`  → ${worseMarginPlot} ควรลดต้นทุน เพื่อเพิ่มกำไร`);
+  }
+
+  // ------------------------------
+  // 3) ค่าใช้จ่ายสูงผิดปกติ
+  // ------------------------------
+  if (data1.expense > 0 && data2.expense > 0) {
+    const expenseRatio =
+      Math.max(data1.expense, data2.expense) /
+      Math.min(data1.expense, data2.expense);
+
+    if (expenseRatio > 1.5) {
+      const higherExpensePlot =
+        data1.expense > data2.expense ? data1.name : data2.name;
+      const diff = Math.abs(data1.expense - data2.expense);
+
+      adviceLines.push(
+        `•  ${higherExpensePlot} มีค่าใช้จ่ายสูงกว่า ${fmt(diff)} บาท`
+      );
+      adviceLines.push(`  → แนะนำตรวจสอบรายการค่าใช้จ่ายเพื่อหาจุดประหยัด`);
     }
   }
 
-  // 3. วิเคราะห์ค่าใช้จ่ายที่สูงผิดปกติ
-  const expenseRatio = data1.expense > 0 && data2.expense > 0 ? 
-    Math.max(data1.expense, data2.expense) / Math.min(data1.expense, data2.expense) : 0;
-
-  if (expenseRatio > 1.5) {
-    const higherExpensePlot = data1.expense > data2.expense ? data1.name : data2.name;
-    const higherExpense = Math.max(data1.expense, data2.expense);
-    const lowerExpense = Math.min(data1.expense, data2.expense);
-    const diff = higherExpense - lowerExpense;
-    
-    adviceLines.push(`• ⚠️ ${higherExpensePlot} มีค่าใช้จ่ายสูงกว่า ${fmt(diff)} บาท`);
-    adviceLines.push(`  → แนะนำตรวจสอบรายการค่าใช้จ่ายเพื่อหาจุดประหยัด`);
+  // ------------------------------
+  // 4) ชมพืชที่ดีที่สุดตาม "ประสิทธิภาพจริง"
+  // ------------------------------
+  if (bestMarginValue > 0.3) {
+    adviceLines.push(
+      `•  ${bestMarginPlot} บริหารจัดการได้ดีมาก กำไรสูงถึง ${Math.round(
+        bestMarginValue * 100
+      )}%`
+    );
+  } else if (bestMarginValue > 0.15) {
+    adviceLines.push(`•  ${bestMarginPlot} มีผลประกอบการที่ดี`);
   }
 
-  // 4. คำแนะนำเชิงบวก - ชมจุดแข็ง
-  const bestPlot = data1.profit >= data2.profit ? data1.name : data2.name;
-  const bestMargin = Math.max(margin1, margin2);
-
-  if (bestMargin > 0.3) {
-    adviceLines.push(`• 👍 ${bestPlot} บริหารจัดการได้ดีมาก กำไรสูงถึง ${Math.round(bestMargin * 100)}%`);
-  } else if (bestMargin > 0.15) {
-    adviceLines.push(`• ✓ ${bestPlot} มีผลประกอบการที่ดี`);
-  }
-
-  // 5. ข้อมูลไม่เพียงพอ
+  // ------------------------------
+  // 5) fallback
+  // ------------------------------
   if (adviceLines.length === 0) {
     adviceLines.push("• กรุณาเพิ่มข้อมูลรายได้และค่าใช้จ่ายเพื่อดูคำแนะนำ");
   }
@@ -225,8 +278,8 @@ const CompareScreen = ({ navigation, route }) => {
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             {/* 💡 เปลี่ยนเป็น Image สำหรับปุ่มย้อนกลับ */}
-            <Image 
-              source={require('../assets/images/back_icon.png')} 
+            <Image
+              source={require("../assets/images/back_icon.png")}
               style={styles.backIcon} // ใช้ style ที่กำหนดไว้ใน styles
             />
           </TouchableOpacity>
@@ -328,10 +381,10 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   // 💡 แก้ไข: ลบ 'back' เดิมและเพิ่ม 'backIcon'
-  backIcon: { 
-    width: 28, 
-    height: 28, 
-    tintColor: '#333', 
+  backIcon: {
+    width: 28,
+    height: 28,
+    tintColor: "#333",
     marginRight: 10,
   },
   title: { fontSize: 24, fontWeight: "bold", color: "#84a58b" },
@@ -371,7 +424,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
 
-  barValueLabel: { // เปลี่ยนชื่อ class เพื่อความชัดเจน
+  barValueLabel: {
+    // เปลี่ยนชื่อ class เพื่อความชัดเจน
     position: "absolute",
     fontSize: 13,
     fontWeight: "600",
