@@ -41,15 +41,9 @@ const NetProfitCard = ({ income, expense, profit }) => {
     </View>
   );
 };
-// --------------------------------------------------------
-//  Analytics Card (สรุปค่าใช้จ่ายตามพืช)
-// --------------------------------------------------------
-// const AnalyticsCard = ({ reloadSignal }) => {
-//   const { user } = useAuth();
-//   const [activeTab, setActiveTab] = useState("expense");
 
 // ========================================================
-// 2. Analytics Card (กราฟวงกลม แยกประเภท)
+// 2. Analytics Card (กราฟวงกลม/แท่ง แยกประเภท)
 // ========================================================
 const AnalyticsCard = ({ reloadSignal }) => {
   const { user } = useAuth();
@@ -85,103 +79,101 @@ const AnalyticsCard = ({ reloadSignal }) => {
     loadData();
   }, [reloadSignal, user]);
 
-  // ฟังก์ชัน Render กราฟและ Legend
-  const renderChartContent = (data, type) => {
+  const fmt = (n) => Number(n).toLocaleString();
+
+  // ------------------------------------------------------
+  // ⭐ ฟังก์ชัน Render แผนภูมิแท่งแนวนอน (สำหรับ Tab กำไร)
+  // ------------------------------------------------------
+  const renderHorizontalBarChart = (data) => {
+    // กรองเฉพาะรายการที่มีมูลค่า (ทั้งบวกและลบ)
+    const activeData = data.filter(d => Math.abs(parseFloat(d.amount)) > 0);
+    if (activeData.length === 0) {
+        return <Text style={styles.noDataText}>ไม่มีข้อมูลกำไรหรือขาดทุน</Text>;
+    }
+    
+    // หาค่าสูงสุด (ทั้งบวกและลบ) เพื่อกำหนด Scale ของแท่ง
+    const allAmounts = activeData.map(d => Math.abs(parseFloat(d.amount)));
+    const maxAmount = Math.max(...allAmounts, 0);
+    const scaleFactor = maxAmount > 0 ? 150 / maxAmount : 0; // 150px คือความกว้างสูงสุดของแท่ง
+
+    return (
+      <View style={styles.barChartContainer}>
+        {activeData.map((item, index) => {
+          const amount = parseFloat(item.amount);
+          const isProfit = amount >= 0;
+          const barWidth = Math.abs(amount) * scaleFactor;
+          const barColor = isProfit ? '#81C784' : '#E57373'; // เขียว: กำไร, แดง: ขาดทุน
+          const displayAmount = isProfit ? `+${fmt(amount)}` : fmt(amount);
+          
+          return (
+            <View key={index} style={styles.barItem}>
+              <Text style={styles.barItemTitle}>{item.plant_name || "ไม่ระบุ"}</Text>
+              
+              <View style={styles.barVisuals}>
+                {/* Visual Bar */}
+                <View style={[styles.barVisual, { 
+                  width: barWidth, 
+                  backgroundColor: barColor,
+                }]} />
+                
+                {/* Value Label */}
+                <Text style={[styles.barItemAmount, { color: barColor }]}>
+                  {displayAmount} บ.
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+  
+  // ------------------------------------------------------
+  // ฟังก์ชัน Render กราฟวงกลมและ Legend (สำหรับ Tab รายได้/ค่าใช้จ่าย)
+  // ------------------------------------------------------
+  const renderDonutChartAndLegend = (data) => {
     const BAR_COLORS = ["#FFC107", "#2196F3", "#4CAF50", "#FF5722", "#9C27B0", "#795548", "#607D8B"];
     
-    let chartData = [];
-    let lossData = []; // สำหรับเก็บรายการขาดทุน (กรณี Profit)
+    // สำหรับ Income/Expense เราคำนวณจากยอดรวม
+    const total = data.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
+    
+    const chartData = data.map((item, index) => ({
+      name: item.plant_name || "ไม่ระบุ",
+      amount: Math.abs(parseFloat(item.amount)),
+      percentage: total > 0 
+        ? ((Math.abs(parseFloat(item.amount)) / total) * 100).toFixed(1) 
+        : 0,
+      color: BAR_COLORS[index % BAR_COLORS.length]
+    }));
 
-    // ------------------------------------------------------
-    // ⭐ LOGIC การคำนวณข้อมูลกราฟ
-    // ------------------------------------------------------
-    if (type === 'profit') {
-      // 1. กรองเฉพาะที่มีกำไร (Amount > 0) เพื่อนำไปวาดกราฟ
-      const positiveItems = data.filter(d => parseFloat(d.amount) > 0);
-      
-      // 2. หาผลรวมกำไรที่เป็นบวกทั้งหมด (เพื่อใช้เป็นฐาน 100%)
-      const totalPositive = positiveItems.reduce((sum, item) => sum + parseFloat(item.amount), 0);
-
-      // 3. Map ข้อมูลสำหรับกราฟ
-      chartData = positiveItems.map((item, index) => ({
-        name: item.plant_name || "ไม่ระบุ",
-        amount: parseFloat(item.amount),
-        // คำนวณ % เทียบกับยอดกำไรรวมที่เป็นบวก
-        percentage: totalPositive > 0 
-          ? ((parseFloat(item.amount) / totalPositive) * 100).toFixed(1) 
-          : 0,
-        color: BAR_COLORS[index % BAR_COLORS.length]
-      }));
-
-      // 4. แยกรายการขาดทุน (Amount < 0) ออกมาแสดงต่างหาก
-      lossData = data.filter(d => parseFloat(d.amount) < 0).map(item => ({
-        name: item.plant_name || "ไม่ระบุ",
-        amount: parseFloat(item.amount)
-      }));
-
-    } else {
-      // กรณี Income หรือ Expense (ปกติค่ามาเป็นบวกอยู่แล้ว หรือถ้า Expense เป็นลบก็แปลงเป็น Absolute)
-      const total = data.reduce((sum, item) => sum + Math.abs(parseFloat(item.amount)), 0);
-      
-      chartData = data.map((item, index) => ({
-        name: item.plant_name || "ไม่ระบุ",
-        amount: Math.abs(parseFloat(item.amount)),
-        percentage: total > 0 
-          ? ((Math.abs(parseFloat(item.amount)) / total) * 100).toFixed(1) 
-          : 0,
-        color: BAR_COLORS[index % BAR_COLORS.length]
-      }));
+    if (chartData.length === 0 || total === 0) {
+      return <Text style={styles.noDataText}>ไม่มีข้อมูล</Text>;
     }
 
-    // ------------------------------------------------------
-    // ⭐ การแสดงผล (UI)
-    // ------------------------------------------------------
     return (
-      <>
-        {(chartData.length > 0 || lossData.length > 0) ? (
-          <>
-            {/* กราฟวงกลม (เฉพาะยอดบวก) */}
-            {chartData.length > 0 && (
-              <View style={styles.chartWrapper}>
-                <DonutChart size={130} strokeWidth={20} data={chartData} />
-              </View>
-            )}
-
-            {/* Legend (รายการข้อมูล) */}
-            <View style={styles.legendContainer}>
-              
-              {/* รายการปกติ (กำไร/รายได้/รายจ่าย) */}
-              {chartData.map((p, index) => (
-                <View key={`chart-${index}`} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: p.color }]} />
-                  <View style={styles.legendTextContainer}>
-                    <Text style={styles.legendTitle}>{p.name}</Text>
-                    <Text style={styles.legendSubtitle}>
-                      {p.percentage}% ({p.amount.toLocaleString()} บ.)
-                    </Text>
-                  </View>
-                </View>
-              ))}
-
-              {/* รายการขาดทุน (แสดงเฉพาะ Tab กำไร) */}
-              {type === 'profit' && lossData.map((l, index) => (
-                <View key={`loss-${index}`} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#e57373' }]} />
-                  <View style={styles.legendTextContainer}>
-                    <Text style={styles.legendTitle}>{l.name} (ขาดทุน)</Text>
-                    <Text style={[styles.legendSubtitle, { color: '#d32f2f' }]}>
-                      {l.amount.toLocaleString()} บ.
-                    </Text>
-                  </View>
-                </View>
-              ))}
-              
-            </View>
-          </>
-        ) : (
-          <Text style={styles.noDataText}>ไม่มีข้อมูล</Text>
+      <View style={styles.chartRow}>
+        {/* กราฟวงกลม */}
+        {chartData.length > 0 && (
+          <View style={styles.chartWrapper}>
+            <DonutChart size={130} strokeWidth={20} data={chartData} />
+          </View>
         )}
-      </>
+
+        {/* Legend (รายการข้อมูล) */}
+        <View style={styles.legendContainer}>
+          {chartData.map((p, index) => (
+            <View key={`chart-${index}`} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: p.color }]} />
+              <View style={styles.legendTextContainer}>
+                <Text style={styles.legendTitle}>{p.name}</Text>
+                <Text style={styles.legendSubtitle}>
+                  {p.percentage}% ({fmt(p.amount)} บ.)
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
     );
   };
 
@@ -195,20 +187,28 @@ const AnalyticsCard = ({ reloadSignal }) => {
             onPress={() => setActiveTab(tab)}
           >
             <Text style={activeTab === tab ? styles.tabActiveText : styles.tabText}>
-              {tab === 'expense' ? 'ค่าใช้จ่าย' : tab === 'income' ? 'รายได้' : 'กำไร'}
+              {tab === 'expense' ? 'ค่าใช้จ่าย' : tab === 'income' ? 'รายได้' : 'กำไร/ขาดทุน'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={styles.chartRow}>
+      <View style={{ minHeight: 150, paddingVertical: 5 }}>
         {loading ? (
           <ActivityIndicator size="large" color="#84a58b" />
         ) : (
           <>
-            {activeTab === "expense" && renderChartContent(expenseData, "expense")}
-            {activeTab === "income" && renderChartContent(incomeData, "income")}
-            {activeTab === "profit" && renderChartContent(profitData, "profit")}
+            {/* 💡 ถ้าเป็น Tab 'กำไร' ให้ใช้ Bar Chart */}
+            {activeTab === "profit" ? (
+              renderHorizontalBarChart(profitData)
+            ) : (
+              /* ถ้าเป็น Tab อื่น ให้ใช้ Donut Chart */
+              activeTab === "expense" ? (
+                renderDonutChartAndLegend(expenseData)
+              ) : (
+                renderDonutChartAndLegend(incomeData)
+              )
+            )}
           </>
         )}
       </View>
@@ -319,7 +319,7 @@ const HomeScreen = () => {
 export default HomeScreen;
 
 // ========================================================
-// Styles
+// Styles (มีการเพิ่ม Styles สำหรับ Bar Chart)
 // ========================================================
 const styles = StyleSheet.create({
   screenContainer: { flex: 1, backgroundColor: "#F4F7F2" },
@@ -345,10 +345,10 @@ const styles = StyleSheet.create({
   tabActive: { paddingVertical: 10, paddingHorizontal: 15, borderBottomWidth: 3, borderBottomColor: "#84a58b", marginRight: 10 },
   tabActiveText: { color: "#333", fontWeight: "bold", fontSize: 16 },
   
-  // Chart & Legend Layout
+  // Chart & Legend Layout (สำหรับ Donut Chart)
   chartRow: { 
     flexDirection: "row", 
-    alignItems: "flex-start", // จัดให้ชิดบนเพื่อความสวยงามเมื่อรายการเยอะ
+    alignItems: "flex-start", 
     minHeight: 150,
     paddingVertical: 5
   },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 20,
-    paddingTop: 10, // ดันลงนิดนึง
+    paddingTop: 10, 
   },
   legendContainer: { 
     flex: 1, 
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     height: 12, 
     borderRadius: 6, 
     marginRight: 10,
-    marginTop: 4 // จัดตำแหน่งจุดให้ตรงกับบรรทัดแรกของตัวหนังสือ
+    marginTop: 4 
   },
   legendTextContainer: {
     flex: 1,
@@ -382,13 +382,40 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 2,
-    flexWrap: 'wrap', // ให้ตัดคำลงบรรทัดใหม่ถ้าชื่อยาว
+    flexWrap: 'wrap', 
   },
   legendSubtitle: {
     fontSize: 13,
     color: '#666',
   },
   noDataText: { flex: 1, textAlign: 'center', fontSize: 16, color: 'grey', marginTop: 20 },
+
+  // ⭐ New Styles for Horizontal Bar Chart (for Profit Tab)
+  barChartContainer: {
+    paddingHorizontal: 10,
+  },
+  barItem: {
+    marginBottom: 15,
+  },
+  barItemTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  barVisuals: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  barVisual: {
+    height: 15,
+    borderRadius: 4,
+    marginRight: 10,
+  },
+  barItemAmount: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
 
   // Sections
   section: { paddingHorizontal: 15, marginTop: 15 },
