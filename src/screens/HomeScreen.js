@@ -331,7 +331,7 @@ const HomeScreen = () => {
       if (formatted.length > 0) {
         setSelectedPlotId(formatted[0].id);
         setSelectedPlotName(formatted[0].name);
-        loadPredictedYield(formatted[0].id); // โหลดผลผลิตทันที
+        // loadPredictedYield(formatted[0].id); // โหลดผลผลิตทันที
       }
     } catch (err) {
       console.log("Load plots error:", err);
@@ -351,34 +351,32 @@ const HomeScreen = () => {
   );
 
   const loadPredictedYield = async (plotId) => {
-  if (!plotId) return;
+    if (!plotId) return;
 
-  console.log("LOAD PREDICT -> plotId:", plotId);
+    console.log("LOAD PREDICT -> plotId:", plotId);
 
-  // reset ก่อนเพื่อไม่ให้แสดงค่าของ plot เดิม
-  setPredictedYield(null);
+    // reset ก่อนเพื่อไม่ให้แสดงค่าของ plot เดิม
+    // setPredictedYield(null);
 
-  try {
-    const res = await axios.get(`${API_URL}/predict-yield/${plotId}`);
-    console.log("PREDICT RES:", res.data);
+    try {
+      const res = await axios.get(`${API_URL}/predict-yield/${plotId}`);
+      console.log("PREDICT RES:", res.data);
 
-    if (res.data.ok) {
-      setPredictedYield(res.data.predictedYieldKg);
-    } else {
-      setPredictedYield(null);
+      if (res.data.ok) {
+        setPredictedYield(res.data.predictedYieldKg);
+      } else {
+        setPredictedYield(null);
+      }
+    } catch (err) {
+      console.log("predict error", err);
     }
-  } catch (err) {
-    console.log("predict error", err);
-  }
-};
-
+  };
 
   useEffect(() => {
-  if (selectedPlotId) {
-    loadPredictedYield(selectedPlotId);
-  }
-}, [selectedPlotId]);
-
+    if (selectedPlotId) {
+      loadPredictedYield(selectedPlotId);
+    }
+  }, [selectedPlotId]);
 
   return (
     <View style={styles.screenContainer}>
@@ -402,7 +400,7 @@ const HomeScreen = () => {
               onPress={() => {
                 setSelectedPlotId(plot.id);
                 setSelectedPlotName(plot.name);
-                loadPredictedYield(plot.id);
+                // loadPredictedYield(plot.id);
               }}
               style={{
                 paddingVertical: 10,
@@ -428,13 +426,11 @@ const HomeScreen = () => {
         </ScrollView>
 
         <PredictedYieldCard
-  yieldKg={predictedYield}
-  plotName={selectedPlotName}
-  plotId={selectedPlotId}    
-  onUpdated={() => loadPredictedYield(selectedPlotId)}
-/>
-
-
+          yieldKg={predictedYield}
+          plotName={selectedPlotName}
+          plotId={selectedPlotId}
+          onUpdated={() => loadPredictedYield(selectedPlotId)}
+        />
 
         <AnalyticsCard reloadSignal={reloadSignal} />
         <MyPlotsSection />

@@ -148,22 +148,26 @@ export default function PredictedYieldCard({
 
                       <Text style={styles.historyText}>กก.</Text>
 
-                      <TouchableOpacity
-                        style={styles.saveButtonSmall}
-                        onPress={() => handleInlineUpdate(item.id)}
-                      >
-                        <Text style={styles.saveButtonTextSmall}>บันทึก</Text>
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: "row" }}>
+                        <TouchableOpacity
+                          style={styles.saveButtonSmall}
+                          onPress={() => handleInlineUpdate(item.id)}
+                        >
+                          <Text style={styles.saveButtonTextSmall}>บันทึก</Text>
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.cancelButtonSmall}
-                        onPress={() => {
-                          setEditingId(null);
-                          setEditValue("");
-                        }}
-                      >
-                        <Text style={styles.cancelButtonTextSmall}>ยกเลิก</Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.cancelButtonSmall}
+                          onPress={() => {
+                            setEditingId(null);
+                            setEditValue("");
+                          }}
+                        >
+                          <Text style={styles.cancelButtonTextSmall}>
+                            ยกเลิก
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   ) : (
                     <>
@@ -171,22 +175,25 @@ export default function PredictedYieldCard({
                         ปี {item.year}: {item.yield_kg} กก.
                       </Text>
 
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => {
-                          setEditingId(item.id);
-                          setEditValue(String(item.yield_kg));
-                        }}
-                      >
-                        <Text style={styles.editButtonText}>แก้ไข</Text>
-                      </TouchableOpacity>
+                      {/* ⭐ กลุ่มปุ่มชิดขวา */}
+                      <View style={{ flexDirection: "row" }}>
+                        <TouchableOpacity
+                          style={styles.editButton}
+                          onPress={() => {
+                            setEditingId(item.id);
+                            setEditValue(String(item.yield_kg));
+                          }}
+                        >
+                          <Text style={styles.editButtonText}>แก้ไข</Text>
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDelete(item.id)}
-                      >
-                        <Text style={styles.deleteButtonText}>ลบ</Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => handleDelete(item.id)}
+                        >
+                          <Text style={styles.deleteButtonText}>ลบ</Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   )}
                 </View>
@@ -202,6 +209,7 @@ export default function PredictedYieldCard({
           </View>
         </View>
       </Modal>
+      <Text style={styles.sub}>* อ้างอิงจากข้อมูลย้อนหลัง</Text>
     </View>
   );
 }
@@ -238,10 +246,12 @@ const styles = StyleSheet.create({
   historyRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
+
   historyText: { fontSize: 16 },
 
   editButton: {
@@ -301,5 +311,4 @@ const styles = StyleSheet.create({
 
   closeButton: { marginTop: 20, alignSelf: "center" },
   closeText: { color: "#84a58b", fontSize: 16 },
-  
 });
